@@ -1,0 +1,786 @@
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { fetchJobs, createJob, getJobCandidates } from '../services/api';
+import {
+  Plus, Users, AlertTriangle, Briefcase, Search, X, Download, Eye,
+  MoreHorizontal, TrendingUp, CheckCircle2, Trash2, Star, StarOff, RotateCcw,
+  Calendar, FileText, Mail, Clock,
+} from 'lucide-react';
+
+const STATUS_KEY = 'vyorai:admin:statuses';
+
+export default function AdminDashboard() {
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [candidates, setCandidates] = useState([]);
+  const [selectedJobId, setSelectedJobId] = useState('all');
+  const [showNewJobModal, setShowNewJobModal] = useState(false);
+  const [newJob, setNewJob] = useState({ title: '', description: '' });
+  const [isPosting, setIsPosting] = useState(false);
+
+  const [filterScore, setFilterScore] = useState('all');
+  const [filterFlags, setFilterFlags] = useState('all');
+  const [filterDate, setFilterDate] = useState('all');
+  const [search, setSearch] = useState('');
+
+  // Candidate action state
+  const [statuses, setStatuses] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(STATUS_KEY) || '{}');
+    } catch {
+      return {};
+    }
+  });
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [viewing, setViewing] = useState(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    loadJobs();
+  }, []);
+
+  useEffect(() => {
+    if (jobs.length > 0 || selectedJobId !== 'all') loadCandidates();
+  }, [selectedJobId, jobs]);
+
+  useEffect(() => {
+    localStorage.setItem(STATUS_KEY, JSON.stringify(statuses));
+  }, [statuses]);
+
+  // Close dropdown on outside click / escape
+  useEffect(() => {
+    if (!openMenuId) return;
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    const onEsc = (e) => e.key === 'Escape' && setOpenMenuId(null);
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('keydown', onEsc);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('keydown', onEsc);
+    };
+  }, [openMenuId]);
+
+  const loadJobs = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchJobs();
+      setJobs(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCandidates = async () => {
+    try {
+      if (selectedJobId === 'all') {
+        const lists = await Promise.all(jobs.map((j) => getJobCandidates(j._id).catch(() => [])));
+        const flat = lists.flatMap((list, idx) => list.map((c) => ({ ...c, _jobTitle: jobs[idx]?.title })));
+        setCandidates(flat);
+      } else {
+        const data = await getJobCandidates(selectedJobId);
+        const job = jobs.find((j) => j._id === selectedJobId);
+        setCandidates(data.map((c) => ({ ...c, _jobTitle: job?.title })));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleCreateJob = async (e) => {
+    e.preventDefault();
+    setIsPosting(true);
+    try {
+      await createJob(newJob.title, newJob.description);
+      setShowNewJobModal(false);
+      setNewJob({ title: '', description: '' });
+      await loadJobs();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  const getStatus = (id) => statuses[id]; // 'shortlisted' | 'deleted' | undefined
+
+  const setStatus = (id, next) => {
+    setStatuses((prev) => {
+      const copy = { ...prev };
+      if (!next) delete copy[id];
+      else copy[id] = next;
+      return copy;
+    });
+    setOpenMenuId(null);
+  };
+
+  const filtered = useMemo(() => {
+    const now = Date.now();
+    const DAY = 86400000;
+    return candidates.filter((c) => {
+      if (getStatus(c._id) === 'deleted') return false;
+
+      const name = (c.candidateId?.name || '').toLowerCase();
+      const email = (c.candidateId?.email || '').toLowerCase();
+      const q = search.trim().toLowerCase();
+      if (q && !name.includes(q) && !email.includes(q)) return false;
+
+      const score = c.score || 0;
+      if (filterScore === 'high' && score < 7) return false;
+      if (filterScore === 'mid' && (score < 4 || score >= 7)) return false;
+      if (filterScore === 'low' && score >= 4) return false;
+
+      const flags = c.tabSwitchCount || 0;
+      if (filterFlags === 'flagged' && flags === 0) return false;
+      if (filterFlags === 'clean' && flags > 0) return false;
+      if (filterFlags === 'shortlisted' && getStatus(c._id) !== 'shortlisted') return false;
+
+      if (filterDate !== 'all' && c.createdAt) {
+        const ts = new Date(c.createdAt).getTime();
+        if (filterDate === 'today' && now - ts > DAY) return false;
+        if (filterDate === 'week' && now - ts > 7 * DAY) return false;
+        if (filterDate === 'month' && now - ts > 30 * DAY) return false;
+      }
+
+      return true;
+    });
+  }, [candidates, search, filterScore, filterFlags, filterDate, statuses]);
+
+  const stats = useMemo(() => {
+    const list = candidates.filter((c) => getStatus(c._id) !== 'deleted');
+    const total = list.length;
+    const flagged = list.filter((c) => (c.tabSwitchCount || 0) > 0).length;
+    const strong = list.filter((c) => (c.score || 0) >= 7).length;
+    const avg = total ? (list.reduce((s, c) => s + (c.score || 0), 0) / total).toFixed(1) : '0.0';
+    return { total, flagged, strong, avg };
+  }, [candidates, statuses]);
+
+  const activeFilterCount =
+    (search ? 1 : 0) +
+    (selectedJobId !== 'all' ? 1 : 0) +
+    (filterScore !== 'all' ? 1 : 0) +
+    (filterFlags !== 'all' ? 1 : 0) +
+    (filterDate !== 'all' ? 1 : 0);
+
+  const resetFilters = () => {
+    setSearch('');
+    setSelectedJobId('all');
+    setFilterScore('all');
+    setFilterFlags('all');
+    setFilterDate('all');
+  };
+
+  const downloadReport = (c) => {
+    const report = {
+      candidate: {
+        name: c.candidateId?.name || 'Unknown',
+        email: c.candidateId?.email || null,
+      },
+      role: c._jobTitle || null,
+      score: c.score ?? null,
+      total: c.questions?.length ?? null,
+      tabSwitchCount: c.tabSwitchCount ?? 0,
+      testDurationSeconds: c.testDurationSeconds ?? 0,
+      submittedAt: c.createdAt,
+      status: getStatus(c._id) || 'pending',
+      questions: (c.questions || []).map((q, i) => ({
+        index: i + 1,
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        answered: (c.answers || {})[q.id],
+      })),
+    };
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const safeName = (c.candidateId?.name || 'candidate').replace(/\s+/g, '_');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${safeName}_report.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+        <div>
+          <h1 style={{ fontSize: 26, fontWeight: 600, color: '#0F172A', letterSpacing: '-0.02em' }}>
+            Admin monitoring
+          </h1>
+          <p style={{ marginTop: 6, fontSize: 14, color: '#64748B' }}>
+            Review candidate assessments, flags, and scores across open roles.
+          </p>
+        </div>
+        <button onClick={() => setShowNewJobModal(true)} className="btn-primary" style={{ height: 40 }}>
+          <Plus size={14} /> Post new role
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 32 }}>
+        <Stat label="Candidates" value={stats.total} icon={<Users size={16} />} tone="indigo" />
+        <Stat label="Strong performers" value={stats.strong} icon={<TrendingUp size={16} />} tone="emerald" />
+        <Stat label="Flagged" value={stats.flagged} icon={<AlertTriangle size={16} />} tone="rose" />
+        <Stat label="Average score" value={`${stats.avg}/10`} icon={<CheckCircle2 size={16} />} tone="slate" />
+      </div>
+
+      {/* Filters bar */}
+      <div className="panel" style={{ padding: 14, marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: '1 1 240px', minWidth: 220 }}>
+          <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or email…"
+            className="input-soft"
+            style={{ paddingLeft: 34 }}
+          />
+        </div>
+        <Select value={selectedJobId} onChange={setSelectedJobId} label="Role">
+          <option value="all">All roles</option>
+          {jobs.map((j) => <option key={j._id} value={j._id}>{j.title}</option>)}
+        </Select>
+        <Select value={filterScore} onChange={setFilterScore} label="Score">
+          <option value="all">All scores</option>
+          <option value="high">Strong (7+)</option>
+          <option value="mid">Average (4–6)</option>
+          <option value="low">Weak (&lt;4)</option>
+        </Select>
+        <Select value={filterFlags} onChange={setFilterFlags} label="Status">
+          <option value="all">All candidates</option>
+          <option value="flagged">Flagged only</option>
+          <option value="clean">No flags</option>
+          <option value="shortlisted">Shortlisted</option>
+        </Select>
+        <Select value={filterDate} onChange={setFilterDate} label="Date">
+          <option value="all">Any time</option>
+          <option value="today">Last 24 hours</option>
+          <option value="week">Last 7 days</option>
+          <option value="month">Last 30 days</option>
+        </Select>
+        {activeFilterCount > 0 && (
+          <button onClick={resetFilters} className="btn-ghost" style={{ padding: '6px 10px', color: '#4F46E5', fontWeight: 600 }}>
+            <RotateCcw size={12} /> Reset
+          </button>
+        )}
+      </div>
+
+      {/* Results count */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <p style={{ fontSize: 13, color: '#64748B' }}>
+          {filtered.length} of {stats.total} candidate{stats.total !== 1 ? 's' : ''}
+          {activeFilterCount > 0 && <span style={{ marginLeft: 6, color: '#4F46E5' }}>· {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active</span>}
+        </p>
+      </div>
+
+      {/* Table */}
+      <div className="table-card">
+        {loading ? (
+          <div style={{ padding: 24 }}>
+            {[1, 2, 3, 4].map((i) => <div key={i} className="skeleton" style={{ height: 48, marginBottom: 8 }} />)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: 56, textAlign: 'center' }}>
+            <Briefcase size={32} style={{ margin: '0 auto 12px', color: '#CBD5E1' }} />
+            <p style={{ fontWeight: 600, color: '#0F172A' }}>No candidates to show</p>
+            <p style={{ marginTop: 4, fontSize: 13, color: '#64748B' }}>
+              {activeFilterCount > 0 ? 'Try adjusting or resetting your filters.' : 'Post a role to get started.'}
+            </p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto', overflowY: 'visible' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Candidate</th>
+                  <th>Role</th>
+                  <th>Time taken</th>
+                  <th>Flags</th>
+                  <th>Score</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((c) => {
+                  const name = c.candidateId?.name || 'Unknown';
+                  const email = c.candidateId?.email || '—';
+                  const initials = name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
+                  const score = c.score || 0;
+                  const flags = c.tabSwitchCount || 0;
+                  const scoreTone = score >= 7 ? 'emerald' : score >= 4 ? 'amber' : 'rose';
+                  const durSec = c.testDurationSeconds || 0;
+                  const shortlisted = getStatus(c._id) === 'shortlisted';
+
+                  return (
+                    <tr
+                      key={c._id}
+                      style={{
+                        background: shortlisted ? '#ECFDF5' : undefined,
+                        borderLeft: shortlisted ? '3px solid #10B981' : '3px solid transparent',
+                      }}
+                    >
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{
+                            width: 32, height: 32, borderRadius: 999,
+                            background: shortlisted ? '#D1FAE5' : '#EEF2FF',
+                            color: shortlisted ? '#047857' : '#4338CA',
+                            display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600,
+                          }}>
+                            {initials || '?'}
+                          </div>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <p style={{ fontSize: 13, fontWeight: 600, color: '#0F172A' }}>{name}</p>
+                              {shortlisted && (
+                                <span className="status-pill pill-emerald" style={{ padding: '2px 8px' }}>
+                                  <Star size={10} style={{ marginRight: 3 }} fill="#047857" color="#047857" />
+                                  Shortlisted
+                                </span>
+                              )}
+                            </div>
+                            <p style={{ fontSize: 12, color: '#64748B' }}>{email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: 13, color: '#334155' }}>{c._jobTitle || '—'}</span>
+                      </td>
+                      <td>
+                        <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 13, color: '#334155' }}>
+                          {Math.floor(durSec / 60)}m {durSec % 60}s
+                        </span>
+                      </td>
+                      <td>
+                        {flags > 0 ? (
+                          <span className="status-pill pill-rose">
+                            <AlertTriangle size={11} style={{ marginRight: 4 }} />
+                            {flags} flag{flags !== 1 ? 's' : ''}
+                          </span>
+                        ) : (
+                          <span className="status-pill pill-emerald">Clean</span>
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ width: 56, height: 6, background: '#F1F5F9', borderRadius: 999, overflow: 'hidden' }}>
+                            <div
+                              style={{
+                                height: '100%',
+                                width: `${(score / 10) * 100}%`,
+                                background: scoreTone === 'emerald' ? '#10B981' : scoreTone === 'amber' ? '#F59E0B' : '#F43F5E',
+                              }}
+                            />
+                          </div>
+                          <span style={{
+                            fontSize: 13, fontWeight: 600,
+                            color: scoreTone === 'emerald' ? '#047857' : scoreTone === 'amber' ? '#B45309' : '#BE123C',
+                          }}>
+                            {score}/10
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ textAlign: 'right', position: 'relative' }}>
+                        <div style={{ display: 'inline-flex', gap: 2, position: 'relative' }}>
+                          <IconAction title="View report" onClick={() => setViewing(c)}>
+                            <Eye size={14} />
+                          </IconAction>
+                          <IconAction title="Download JSON" onClick={() => downloadReport(c)}>
+                            <Download size={14} />
+                          </IconAction>
+                          <div style={{ position: 'relative' }} ref={openMenuId === c._id ? menuRef : null}>
+                            <IconAction
+                              title="More"
+                              onClick={() => setOpenMenuId(openMenuId === c._id ? null : c._id)}
+                              active={openMenuId === c._id}
+                            >
+                              <MoreHorizontal size={14} />
+                            </IconAction>
+                            {openMenuId === c._id && (
+                              <Dropdown
+                                onShortlist={() => setStatus(c._id, shortlisted ? null : 'shortlisted')}
+                                onDelete={() => setStatus(c._id, 'deleted')}
+                                shortlisted={shortlisted}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* View candidate modal */}
+      {viewing && (
+        <ViewCandidateModal
+          candidate={viewing}
+          status={getStatus(viewing._id)}
+          onClose={() => setViewing(null)}
+          onShortlist={() => setStatus(viewing._id, getStatus(viewing._id) === 'shortlisted' ? null : 'shortlisted')}
+          onDelete={() => {
+            setStatus(viewing._id, 'deleted');
+            setViewing(null);
+          }}
+          onDownload={() => downloadReport(viewing)}
+        />
+      )}
+
+      {/* New job modal */}
+      {showNewJobModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(15,23,42,0.4)' }}
+          onClick={() => !isPosting && setShowNewJobModal(false)}
+        >
+          <div
+            className="card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 520, padding: 0, boxShadow: '0 20px 60px rgba(15,23,42,0.15)' }}
+          >
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <h2 style={{ fontSize: 17, fontWeight: 600, color: '#0F172A' }}>Post a new role</h2>
+                <p style={{ marginTop: 2, fontSize: 12, color: '#64748B' }}>This context will be used to generate candidate assessments.</p>
+              </div>
+              <button onClick={() => setShowNewJobModal(false)} className="btn-ghost" style={{ padding: 6 }}>
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleCreateJob} style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label className="field-label">Job title</label>
+                <input
+                  required autoFocus
+                  placeholder="e.g. Senior Frontend Engineer"
+                  value={newJob.title}
+                  onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
+                  className="input-soft"
+                />
+              </div>
+              <div>
+                <label className="field-label">Description & requirements</label>
+                <textarea
+                  required rows={5}
+                  placeholder="Paste the full responsibilities and technical stack…"
+                  value={newJob.description}
+                  onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
+                  className="input-soft"
+                  style={{ resize: 'vertical', fontFamily: 'inherit' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 6 }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowNewJobModal(false)} disabled={isPosting}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" disabled={isPosting}>
+                  {isPosting ? 'Posting…' : 'Create role'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- subcomponents ---------- */
+
+function Stat({ label, value, icon, tone }) {
+  const tones = {
+    indigo: { bg: '#EEF2FF', color: '#4F46E5' },
+    emerald: { bg: '#ECFDF5', color: '#059669' },
+    rose: { bg: '#FFF1F2', color: '#E11D48' },
+    slate: { bg: '#F1F5F9', color: '#475569' },
+  };
+  const t = tones[tone];
+  return (
+    <div className="card" style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div style={{ width: 36, height: 36, borderRadius: 8, background: t.bg, color: t.color, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div>
+        <p style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{label}</p>
+        <p style={{ marginTop: 2, fontSize: 22, fontWeight: 600, color: '#0F172A', letterSpacing: '-0.01em' }}>{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function Select({ value, onChange, children, label }) {
+  const hasValue = value !== 'all';
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="input-soft"
+      aria-label={label}
+      style={{
+        width: 'auto',
+        minWidth: 150,
+        cursor: 'pointer',
+        paddingRight: 32,
+        borderColor: hasValue ? '#6366F1' : undefined,
+        background: hasValue ? '#EEF2FF' : '#FFFFFF',
+        color: hasValue ? '#4338CA' : '#0F172A',
+        fontWeight: hasValue ? 600 : 400,
+      }}
+    >
+      {children}
+    </select>
+  );
+}
+
+function IconAction({ title, children, onClick, active }) {
+  return (
+    <button
+      type="button"
+      title={title}
+      onClick={onClick}
+      className="btn-ghost"
+      style={{
+        padding: 6,
+        color: active ? '#4F46E5' : '#64748B',
+        background: active ? '#EEF2FF' : undefined,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Dropdown({ onShortlist, onDelete, shortlisted }) {
+  return (
+    <div
+      role="menu"
+      style={{
+        position: 'absolute',
+        right: 0,
+        top: 'calc(100% + 6px)',
+        minWidth: 180,
+        background: '#FFFFFF',
+        border: '1px solid #E2E8F0',
+        borderRadius: 8,
+        boxShadow: '0 10px 30px rgba(15,23,42,0.12)',
+        padding: 4,
+        zIndex: 30,
+      }}
+    >
+      <DropdownItem onClick={onShortlist} tone={shortlisted ? 'slate' : 'emerald'}>
+        {shortlisted ? <StarOff size={14} /> : <Star size={14} />}
+        {shortlisted ? 'Remove shortlist' : 'Keep / Shortlist'}
+      </DropdownItem>
+      <div style={{ height: 1, background: '#F1F5F9', margin: '4px 0' }} />
+      <DropdownItem onClick={onDelete} tone="rose">
+        <Trash2 size={14} />
+        Delete candidate
+      </DropdownItem>
+    </div>
+  );
+}
+
+function DropdownItem({ children, onClick, tone }) {
+  const tones = {
+    emerald: '#047857',
+    rose: '#BE123C',
+    slate: '#334155',
+  };
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '8px 10px',
+        borderRadius: 6,
+        border: 'none',
+        background: 'transparent',
+        color: tones[tone],
+        fontSize: 13,
+        fontWeight: 500,
+        cursor: 'pointer',
+        textAlign: 'left',
+        transition: 'background 0.15s ease',
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ViewCandidateModal({ candidate: c, status, onClose, onShortlist, onDelete, onDownload }) {
+  const name = c.candidateId?.name || 'Unknown';
+  const email = c.candidateId?.email || '—';
+  const score = c.score || 0;
+  const flags = c.tabSwitchCount || 0;
+  const durSec = c.testDurationSeconds || 0;
+  const total = c.questions?.length || 0;
+  const correct = (c.questions || []).filter((q) => (c.answers || {})[q.id] === q.correctAnswer).length;
+  const accuracy = total ? Math.round((correct / total) * 100) : 0;
+  const shortlisted = status === 'shortlisted';
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 60,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16, background: 'rgba(15,23,42,0.45)',
+      }}
+      onClick={onClose}
+    >
+      <div
+        className="card"
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: '100%', maxWidth: 640, padding: 0, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(15,23,42,0.15)' }}
+      >
+        {/* Header */}
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 999,
+              background: shortlisted ? '#D1FAE5' : '#EEF2FF',
+              color: shortlisted ? '#047857' : '#4338CA',
+              display: 'grid', placeItems: 'center',
+              fontSize: 14, fontWeight: 600,
+            }}>
+              {name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h2 style={{ fontSize: 17, fontWeight: 600, color: '#0F172A' }}>{name}</h2>
+                {shortlisted && (
+                  <span className="status-pill pill-emerald">
+                    <Star size={10} fill="#047857" color="#047857" style={{ marginRight: 3 }} />
+                    Shortlisted
+                  </span>
+                )}
+              </div>
+              <p style={{ marginTop: 2, fontSize: 12, color: '#64748B' }}>{c._jobTitle || '—'}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="btn-ghost" style={{ padding: 6 }} aria-label="Close">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 20 }}>
+            <InfoRow icon={<Mail size={12} />} label="Email" value={email} />
+            <InfoRow icon={<Calendar size={12} />} label="Submitted" value={c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'} />
+            <InfoRow icon={<Clock size={12} />} label="Time taken" value={`${Math.floor(durSec / 60)}m ${durSec % 60}s`} />
+            <InfoRow icon={<AlertTriangle size={12} />} label="Flags" value={`${flags} tab switch${flags === 1 ? '' : 'es'}`} />
+          </div>
+
+          {/* Score block */}
+          <div className="panel" style={{ padding: 16, marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Score</p>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#0F172A' }}>{score}/10 · {accuracy}% accuracy</span>
+            </div>
+            <div style={{ height: 6, background: '#F1F5F9', borderRadius: 999, overflow: 'hidden' }}>
+              <div
+                style={{
+                  height: '100%', width: `${(score / 10) * 100}%`,
+                  background: score >= 7 ? '#10B981' : score >= 4 ? '#F59E0B' : '#F43F5E',
+                }}
+              />
+            </div>
+            <p style={{ marginTop: 8, fontSize: 12, color: '#64748B' }}>
+              {correct} correct of {total} question{total !== 1 ? 's' : ''}
+            </p>
+          </div>
+
+          {/* Questions list */}
+          {total > 0 && (
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Question outcomes</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {c.questions.map((q, idx) => {
+                  const isCorrect = (c.answers || {})[q.id] === q.correctAnswer;
+                  return (
+                    <div
+                      key={q.id || idx}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '8px 12px', borderRadius: 6,
+                        background: isCorrect ? '#ECFDF5' : '#FFF1F2',
+                        border: `1px solid ${isCorrect ? '#A7F3D0' : '#FECDD3'}`,
+                      }}
+                    >
+                      <span style={{
+                        width: 18, height: 18, borderRadius: 999,
+                        background: isCorrect ? '#10B981' : '#F43F5E',
+                        color: '#FFFFFF', fontSize: 10, fontWeight: 700,
+                        display: 'grid', placeItems: 'center', flexShrink: 0,
+                      }}>
+                        {idx + 1}
+                      </span>
+                      <span style={{
+                        flex: 1, fontSize: 13,
+                        color: isCorrect ? '#065F46' : '#9F1239',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {q.question}
+                      </span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: isCorrect ? '#047857' : '#BE123C' }}>
+                        {isCorrect ? 'Correct' : 'Wrong'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer actions */}
+        <div style={{ padding: '16px 24px', borderTop: '1px solid #E2E8F0', display: 'flex', gap: 10, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <button onClick={onDelete} className="btn-secondary" style={{ color: '#BE123C', borderColor: '#FECDD3' }}>
+            <Trash2 size={14} /> Delete
+          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={onDownload} className="btn-secondary">
+              <Download size={14} /> Download
+            </button>
+            <button
+              onClick={onShortlist}
+              className="btn-primary"
+              style={shortlisted ? { background: '#059669' } : undefined}
+            >
+              {shortlisted ? <><StarOff size={14} /> Remove shortlist</> : <><Star size={14} /> Keep / Shortlist</>}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ icon, label, value }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 10, borderRadius: 8, background: '#F8FAFC', border: '1px solid #F1F5F9' }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#64748B', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        {icon} {label}
+      </span>
+      <span style={{ fontSize: 13, color: '#0F172A', fontWeight: 500, wordBreak: 'break-word' }}>{value}</span>
+    </div>
+  );
+}

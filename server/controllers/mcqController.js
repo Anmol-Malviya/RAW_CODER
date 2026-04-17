@@ -1,0 +1,179 @@
+import { Groq } from 'groq-sdk';
+import extractTextFromPDF from '../utils/pdfParser.js';
+import Session from '../models/Session.js';
+import Job from '../models/Job.js';
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY || 'default-key',
+});
+
+const isMockMode = () => mongoose.connection.readyState !== 1;
+import mongoose from 'mongoose';
+
+const SAMPLE_QUESTIONS = Array.from({ length: 10 }, (_, i) => ({
+  id: i + 1,
+  question: `Mock technical question ${i + 1}?`,
+  options: ["Option A", "Option B", "Option C", "Option D"],
+  correctAnswer: "Option A",
+  explanation: `Explanation for mock question ${i + 1}.`
+}));
+
+const MCQ_SYSTEM_PROMPT = `You are an expert technical interviewer. The input provided contains a candidate's parsed Resume Text and a Target Job Role. Generate exactly 10 Multiple Choice Questions to test the candidate's suitability for this specific role. The questions must heavily test the frameworks, languages, and concepts mentioned in the resume. Return the output as a valid JSON object containing an array called 'questions'. Each question must contain: 'id' (integer), 'question' (string), 'options' (array of 4 strings), 'correctAnswer' (string exactly matching one option), and 'explanation' (string explaining the correct choice). Return ONLY the JSON object, no markdown formatting or code blocks.`;
+
+export const generateMCQ = async (req, res) => {
+  try {
+    const { jobId } = req.body;
+    const pdfFile = req.file;
+
+    if (!pdfFile) {
+      return res.status(400).json({ error: 'No PDF file uploaded' });
+    }
+
+    if (!jobId) {
+      return res.status(400).json({ error: 'Job ID is required' });
+    }
+
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+    const jobRole = job.title;
+    const jobDescription = job.description;
+
+    // Extract text from PDF
+    const resumeText = await extractTextFromPDF(pdfFile.buffer);
+
+    if (!resumeText || resumeText.length < 50) {
+      return res.status(400).json({ error: 'Could not extract sufficient text from resume' });
+    }
+
+    // Generate MCQs with Groq
+    let questions;
+    try {
+      if (process.env.GROQ_API_KEY === 'default-key' || !process.env.GROQ_API_KEY) {
+        throw new Error('No API Key');
+      }
+      const completion = await groq.chat.completions.create({
+        model: 'openai/gpt-oss-120b',
+        messages: [
+          { role: 'system', content: MCQ_SYSTEM_PROMPT },
+          {
+            role: 'user',
+            content: `Resume Text:\n${resumeText}\n\nTarget Job Role: ${jobRole}\n\nJob Description Requirements: ${jobDescription}`,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 4000,
+        stream: false,
+        response_format: { type: 'json_object' }
+      });
+
+      const responseContent = completion.choices[0].message.content;
+      const parsedQuestions = JSON.parse(responseContent);
+      questions = parsedQuestions.questions;
+    } catch (err) {
+      console.warn('⚡ Mock Mode: Using sample questions (Groq failed or missing)');
+      questions = SAMPLE_QUESTIONS;
+    }
+
+    if (!Array.isArray(questions) || questions.length !== 10) {
+      return res.status(500).json({ error: 'AI did not generate exactly 10 questions' });
+    }
+
+    // Save session to database
+    let sessionId;
+    try {
+      const session = new Session({
+        candidateId: req.user.id,
+        jobId: job._id,
+        jobRole,
+        resumeText,
+        questions,
+      });
+      await session.save();
+      sessionId = session._id;
+    } catch (dbError) {
+      // DB might not be connected — generate a temporary ID
+      console.warn('DB save failed, using temporary session:', dbError.message);
+      sessionId = `temp_${Date.now()}`;
+    }
+
+    res.json({
+      sessionId,
+      questions: questions.map(({ id, question, options }) => ({
+        id,
+        question,
+        options,
+      })),
+      _rawQuestions: questions, // Full data for client-side scoring fallback
+    });
+  } catch (error) {
+    console.error('MCQ Generation Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to generate questions' });
+  }
+};
+
+export const submitAssessment = async (req, res) => {
+  try {
+    const { sessionId, answers, tabSwitchCount } = req.body;
+
+    if (!sessionId || !answers) {
+      return res.status(400).json({ error: 'Session ID and answers are required' });
+    }
+
+    // Try to get session from DB
+    let session;
+    try {
+      session = await Session.findById(sessionId);
+    } catch {
+      // Session might be a temp session
+    }
+
+    if (session) {
+      // Calculate score
+      let score = 0;
+      session.questions.forEach((q) => {
+        if (answers[q.id] === q.correctAnswer) {
+          score++;
+        }
+      });
+
+      session.answers = answers;
+      session.score = score;
+      session.tabSwitchCount = tabSwitchCount || 0;
+      session.completedAt = new Date();
+      session.testDurationSeconds = req.body.testDurationSeconds || 0;
+      await session.save();
+
+      return res.json({
+        score,
+        totalQuestions: session.questions.length,
+        tabSwitchCount: session.tabSwitchCount,
+        questions: session.questions,
+        answers,
+      });
+    }
+
+    // Fallback for temp sessions — score on client side
+    res.json({
+      message: 'Session not found in DB — score calculated on client',
+      answers,
+      tabSwitchCount: tabSwitchCount || 0,
+    });
+  } catch (error) {
+    console.error('Submit Error:', error);
+    res.status(500).json({ error: 'Failed to submit assessment' });
+  }
+};
+
+export const getSession = async (req, res) => {
+  try {
+    const session = await Session.findById(req.params.id);
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+    res.json(session);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve session' });
+  }
+};
