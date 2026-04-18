@@ -48,6 +48,7 @@ export default function VoiceInterviewPage() {
   const qIdxRef = useRef(0);
   const answersRef = useRef({});
   const questionsRef = useRef([]);
+  const resetTimerRef = useRef(null);
 
   // Sync refs
   useEffect(() => { synthRef.current = window.speechSynthesis; }, []);
@@ -141,6 +142,15 @@ export default function VoiceInterviewPage() {
         setTranscript(p => p + fin + ' ');
       }
       setInterimText(tmp);
+      
+      // Reset timer on actual speech (best detection)
+      if (phaseRef.current === PHASES.LISTENING || phaseRef.current === PHASES.COUNTDOWN) {
+        if (phaseRef.current === PHASES.COUNTDOWN) {
+          setPhase(PHASES.LISTENING);
+          phaseRef.current = PHASES.LISTENING;
+        }
+        if (resetTimerRef.current) resetTimerRef.current();
+      }
     };
 
     recognition.onend = () => {
@@ -171,14 +181,16 @@ export default function VoiceInterviewPage() {
       const avg = data.reduce((s, v) => s + v, 0) / data.length;
       setAudioLevel(Math.round(avg));
 
-      if (avg > SILENCE_THRESHOLD && p === PHASES.COUNTDOWN) {
-        // User started speaking again → cancel countdown
+      if (avg > 15 && (p === PHASES.COUNTDOWN || p === PHASES.LISTENING)) {
+        // User made a loud sound (fallback to raw volume)
         clearTimeout(silenceTimerRef.current);
         clearInterval(countdownRef.current);
-        setPhase(PHASES.LISTENING);
-        phaseRef.current = PHASES.LISTENING;
+        if (p === PHASES.COUNTDOWN) {
+           setPhase(PHASES.LISTENING);
+           phaseRef.current = PHASES.LISTENING;
+        }
         setSilenceCountdown(4);
-        startSilenceTimer();
+        if (resetTimerRef.current) resetTimerRef.current();
       }
 
       animRef.current = requestAnimationFrame(tick);
@@ -210,6 +222,10 @@ export default function VoiceInterviewPage() {
       }
     }, SILENCE_TIMEOUT);
   }, []);
+
+  useEffect(() => {
+    resetTimerRef.current = startSilenceTimer;
+  }, [startSilenceTimer]);
 
   // ── Submit Current Answer ──
   const submitCurrentAnswer = useCallback(() => {
