@@ -296,7 +296,7 @@ export default function VoiceInterviewPage() {
     if (phase === PHASES.INTRO) return;
     const q = questions[currentQuestion];
     if (!q) return;
-    const text = q.text || q;
+    const text = q.text || q.question || (typeof q === 'string' ? q : '');
     speak(`Question ${currentQuestion + 1}. ${text}`);
   }, [currentQuestion]); // Only re-run when question number changes
 
@@ -305,7 +305,7 @@ export default function VoiceInterviewPage() {
     const intro = `Hello! I will ask you ${questions.length} questions. After each question, your microphone will automatically activate. Please speak your answer clearly. I will detect silence and move to the next question automatically. Let's begin.`;
     speak(intro, () => {
       const q = questions[0];
-      if (q) speak(`Question 1. ${q.text || q}`);
+      if (q) speak(`Question 1. ${q.text || q.question || (typeof q === 'string' ? q : '')}`);
     });
   };
 
@@ -349,7 +349,8 @@ export default function VoiceInterviewPage() {
   }
 
   const progress = questions.length ? ((currentQuestion + 1) / questions.length) * 100 : 0;
-  const questionText = questions[currentQuestion]?.text || questions[currentQuestion] || '';
+  const currentQObj = questions[currentQuestion];
+  const questionText = currentQObj?.text || currentQObj?.question || (typeof currentQObj === 'string' ? currentQObj : '');
 
   const bars = Array.from({ length: 16 }, (_, i) => {
     const dist = Math.abs(i - 8);
