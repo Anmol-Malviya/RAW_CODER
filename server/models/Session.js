@@ -21,6 +21,7 @@ const sessionSchema = new mongoose.Schema({
   },
   score: { type: Number, default: null },
   tabSwitchCount: { type: Number, default: 0 },
+  warnings: { type: Number, default: 0 },
   voiceChatHistory: [
     {
       role: String,

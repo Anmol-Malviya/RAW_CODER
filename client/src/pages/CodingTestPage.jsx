@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAssessment } from '../context/AssessmentContext';
 import { Clock, Play, Send, FileCode2, Terminal } from 'lucide-react';
 
@@ -14,19 +14,23 @@ function filterJobs(jobs, keyword) {
 
 export default function CodingTestPage() {
   const navigate = useNavigate();
-  const { state } = useAssessment();
+  const location = useLocation();
+  const { state: assessmentState } = useAssessment();
+  const [isPractice, setIsPractice] = useState(location.state?.isPractice || false);
+  const [problemData, setProblemData] = useState(location.state?.problem || {});
+  
   const [language, setLanguage] = useState('JavaScript');
-  const [code, setCode] = useState(DEFAULT_CODE);
+  const [code, setCode] = useState(problemData.starterCode || DEFAULT_CODE);
   const [output, setOutput] = useState('');
   const [running, setRunning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(45 * 60);
   const editorRef = useRef(null);
 
   useEffect(() => {
-    if (state.status === 'idle') {
+    if (!isPractice && assessmentState.status === 'idle') {
       navigate('/candidate');
     }
-  }, [state.status, navigate]);
+  }, [assessmentState.status, navigate, isPractice]);
 
   useEffect(() => {
     const id = setInterval(() => setTimeLeft((t) => Math.max(0, t - 1)), 1000);
@@ -42,7 +46,7 @@ export default function CodingTestPage() {
     setRunning(true);
     setOutput('Running test cases…');
     setTimeout(() => {
-      setOutput('▶ Test 1: keyword="react" → passed\n▶ Test 2: keyword="Remote" → passed\n▶ Test 3: empty list → passed\n\n3/3 passed · 12ms');
+      setOutput('▶ Test 1: passed\n▶ Test 2: passed\n▶ Test 3: passed\n\nAll test cases passed successfully!');
       setRunning(false);
     }, 700);
   };
@@ -62,7 +66,12 @@ export default function CodingTestPage() {
   };
 
   const handleSubmitResult = () => {
-    navigate('/results');
+    if (isPractice) {
+      alert('Practice session completed! Great job.');
+      navigate('/candidate/practice');
+    } else {
+      navigate('/results');
+    }
   };
 
   return (
@@ -70,8 +79,8 @@ export default function CodingTestPage() {
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <p style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Coding challenge</p>
-          <h1 style={{ fontSize: 22, fontWeight: 600, color: '#0F172A', letterSpacing: '-0.01em', marginTop: 2 }}>Build a job search filter</h1>
+          <p style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{isPractice ? 'Practice Challenge' : 'Coding challenge'}</p>
+          <h1 style={{ fontSize: 22, fontWeight: 600, color: '#0F172A', letterSpacing: '-0.01em', marginTop: 2 }}>{problemData.title || 'Dynamic Problem'}</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, border: '1px solid #E2E8F0', background: '#FFFFFF' }}>
@@ -102,41 +111,24 @@ export default function CodingTestPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: 20, alignItems: 'start' }}>
         {/* Left: Problem */}
         <section className="card" style={{ padding: 24, position: 'sticky', top: 80 }}>
-          <span className="status-pill pill-indigo">Medium · Arrays</span>
+          <span className="status-pill pill-indigo">{problemData.tags || 'General'}</span>
 
           <h2 style={{ fontSize: 18, fontWeight: 600, color: '#0F172A', marginTop: 14, letterSpacing: '-0.01em' }}>
-            Job Search Filter
+            {problemData.title}
           </h2>
 
           <div style={{ marginTop: 16 }}>
             <SectionLabel>Description</SectionLabel>
             <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.7, marginTop: 6 }}>
-              Implement a function <Code>filterJobs(jobs, keyword)</Code> that returns jobs whose title, company, or location contain the given keyword (case-insensitive). The input order must be preserved.
+              {problemData.description}
             </p>
           </div>
 
           <div style={{ marginTop: 16 }}>
-            <SectionLabel>Constraints</SectionLabel>
-            <ul style={{ marginTop: 6, paddingLeft: 16, fontSize: 13, color: '#475569', lineHeight: 1.8 }}>
-              <li>1 ≤ jobs.length ≤ 10<sup>5</sup></li>
-              <li>Expected runtime: O(n)</li>
-              <li>Return an array of matches</li>
-            </ul>
-          </div>
-
-          <div style={{ marginTop: 16 }}>
-            <SectionLabel>Example</SectionLabel>
-            <pre style={{ marginTop: 6, padding: 12, borderRadius: 8, background: '#F8FAFC', border: '1px solid #E2E8F0', fontSize: 12, color: '#334155', lineHeight: 1.6, overflow: 'auto' }}>
-{`Input:
-jobs = [
-  { title: "Frontend Engineer", company: "AI Interviewer", location: "Remote" },
-  { title: "Data Analyst", company: "Stripe", location: "NYC" }
-]
-keyword = "remote"
-
-Output:
-[{ title: "Frontend Engineer", ... }]`}
-            </pre>
+            <SectionLabel>Objective</SectionLabel>
+            <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.7, marginTop: 6 }}>
+              Implement the logic in the editor to solve the requirements as described. Ensure edge cases are handled where applicable.
+            </p>
           </div>
         </section>
 

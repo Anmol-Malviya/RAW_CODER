@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Volume2, Loader, RefreshCw, AlertTriangle } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { Mic, MicOff, Volume2, Loader, RefreshCw, AlertTriangle, PhoneOff, CheckCircle, ChevronRight, Check } from 'lucide-react';
 import { io } from 'socket.io-client';
+import IndianAvatarInterviewer from '../components/IndianAvatarInterviewer';
 import { useAssessment } from '../context/AssessmentContext';
 import { submitAssessment } from '../services/api';
 import '@tensorflow/tfjs';
@@ -35,6 +37,9 @@ export default function VoiceInterviewPage() {
   const [ready, setReady] = useState(false); // camera/mic ready
   const [warnings, setWarnings] = useState(0);
   const [warningMsg, setWarningMsg] = useState('');
+  // Avatar lip-sync state
+  const [currentWord, setCurrentWord] = useState('');
+  const [isMuted, setIsMuted] = useState(false);
 
   // ── Refs ──
   const recognitionRef = useRef(null);
@@ -140,7 +145,7 @@ export default function VoiceInterviewPage() {
     const recognition = new SR();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    recognition.lang = 'en-IN'; // Prioritize Indian English for recognition too
     recognition.maxAlternatives = 1;
 
     recognition.onresult = e => {
@@ -332,14 +337,25 @@ export default function VoiceInterviewPage() {
 
     const utt = new SpeechSynthesisUtterance(text);
     utt.rate = 1.0;
-    utt.lang = 'en-US';
+    utt.lang = 'en-IN';
 
     // Load voices (async on some browsers)
     const voices = synthRef.current.getVoices();
-    const pick = voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('google'))
+    const pick = voices.find(v => v.lang.startsWith('en-IN'))
+      || voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('google'))
       || voices.find(v => v.lang.startsWith('en'))
       || voices[0];
     if (pick) utt.voice = pick;
+
+    // ── Lip-sync: word boundary → phoneme detection ───────────────────
+    utt.onboundary = (e) => {
+      if (e.name === 'word') {
+        const word = text.substring(e.charIndex, e.charIndex + e.charLength);
+        setCurrentWord(word);
+        // Reset to closed after ~130ms (one phoneme duration)
+        setTimeout(() => setCurrentWord(''), 130);
+      }
+    };
 
     const afterSpeak = () => {
       if (onDone) { onDone(); return; }
@@ -362,6 +378,7 @@ export default function VoiceInterviewPage() {
     utt.onend = () => { clearTimeout(safeguard); afterSpeak(); };
 
     synthRef.current.speak(utt);
+    // Reset lip state when speech ends (handled by afterSpeak above via phase change)
   }, [startSilenceTimer, startAudioMonitor]);
 
   // Ask next question when currentQuestion changes
@@ -390,7 +407,7 @@ export default function VoiceInterviewPage() {
 
     const done = async () => {
       try {
-        await submitAssessment(sessionId, finalAnswers, 0, elapsed);
+        await submitAssessment(sessionId, finalAnswers, warnings, elapsed);
       } catch (e) {
         console.error('Submit error:', e);
       } finally {
@@ -414,6 +431,29 @@ export default function VoiceInterviewPage() {
       try { recognitionRef.current?.start(); } catch (_) {}
     }, 300);
   };
+
+  const toggleMute = () => {
+    if (!streamRef.current) return;
+    const audioTrack = streamRef.current.getAudioTracks()[0];
+    if (audioTrack) {
+      audioTrack.enabled = !audioTrack.enabled;
+      setIsMuted(!audioTrack.enabled);
+    }
+  };
+
+  const handleNextQuestion = () => {
+    if (phase === PHASES.LISTENING || phase === PHASES.COUNTDOWN) {
+      submitCurrentAnswer();
+    }
+  };
+
+  const endInterview = () => {
+    if (window.confirm('Are you sure you want to end the interview early? Your current responses will be submitted.')) {
+      finishInterview(answersRef.current);
+    }
+  };
+
+  const isLastQuestion = currentQuestion >= questions.length - 1;
 
   // ─── Guard: No session → redirect (AFTER all hooks) ───
   if (!sessionId) {
@@ -441,153 +481,202 @@ export default function VoiceInterviewPage() {
   const sc = statusConfig[phase] || statusConfig[PHASES.INTRO];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8FAFC', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', fontFamily: "'Inter', sans-serif", color: '#0F172A' }}>
+    <div style={{ minHeight: '100vh', background: '#FAFAFA', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', fontFamily: "'Inter', sans-serif", color: '#1A1A1A' }}>
 
-      {/* ─── Top Bar ─── */}
-      <div style={{ width: '100%', maxWidth: 960, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444', boxShadow: '0 0 0 3px #FEE2E2', animation: 'blink 1.5s infinite' }} />
-          <span style={{ color: '#64748B', fontSize: 12, fontWeight: 700, letterSpacing: '0.08em' }}>LIVE INTERVIEW</span>
-          <span style={{ color: '#6366F1', fontSize: 13, fontWeight: 600 }}>{formatTime(elapsed)}</span>
+      {/* ─── Minimal Header ─── */}
+      <div style={{ width: '100%', maxWidth: 1000, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg, #6366F1, #4F46E5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Bot color="white" size={24} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: 16, fontWeight: 800, margin: 0, tracking: '-0.02em', color: '#1A1A1A' }}>VyorAI <span style={{ color: '#6366F1' }}>Pro</span></h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#EF4444', animation: 'blink 1.5s infinite' }} />
+              <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em' }}>LIVE SESSION • {formatTime(elapsed)}</span>
+            </div>
+          </div>
         </div>
-        <div style={{ fontSize: 12, color: '#4F46E5', background: '#EEF2FF', borderRadius: 8, padding: '5px 14px', fontWeight: 700, border: '1px solid #E0E7FF' }}>
-          Q {currentQuestion + 1} / {questions.length}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ fontSize: 11, color: warnings > 5 ? '#EF4444' : '#64748B', background: warnings > 5 ? '#FEE2E2' : '#F8FAFC', borderRadius: 10, padding: '7px 14px', fontWeight: 800, border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.3s' }}>
+             <AlertTriangle size={12} /> {warnings} Warnings
+          </div>
+          <div style={{ fontSize: 11, color: '#4F46E5', background: '#FFFFFF', borderRadius: 10, padding: '7px 16px', fontWeight: 800, border: '1px solid #E0E7FF', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+            Step {currentQuestion + 1} of {questions.length}
+          </div>
         </div>
       </div>
 
-      {/* ─── Main Content ─── */}
-      <div style={{ width: '100%', maxWidth: 960, display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, marginBottom: 20 }}>
+      {/* ─── Immersive Main Stage ─── */}
+      <div style={{ width: '100%', maxWidth: 1000, display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 32, marginBottom: 40 }}>
 
-        {/* AI Panel */}
-        <div style={{ background: '#FFFFFF', borderRadius: 24, border: '1px solid #E2E8F0', boxShadow: '0 4px 24px -4px rgba(0,0,0,0.06)', padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 460 }}>
+        {/* AI Focus Panel */}
+        <div style={{ background: '#FFFFFF', borderRadius: 32, border: '1px solid #F1F5F9', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.04)', padding: '48px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 560, position: 'relative', overflow: 'hidden' }}>
+          
+          {/* Subtle Background Accent */}
+          <div style={{ position: 'absolute', top: -100, left: -100, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, rgba(255,255,255,0) 70%)', zIndex: 0 }} />
 
-          {/* Avatar */}
-          <div style={{ position: 'relative', marginBottom: 28 }}>
+          {/* Avatar Area */}
+          <div style={{ position: 'relative', marginBottom: 32, zIndex: 1 }}>
             <div style={{
-              width: 108, height: 108, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #4F46E5 0%, #818CF8 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44,
-              boxShadow: phase === PHASES.AI_SPEAKING ? '0 0 0 14px #EEF2FF, 0 0 0 24px #E0E7FF' : '0 4px 16px rgba(79,70,229,0.2)',
-              transition: 'box-shadow 0.4s ease'
-            }}>🤖</div>
-            <div style={{
-              position: 'absolute', bottom: 4, right: 4, width: 28, height: 28, borderRadius: '50%',
-              background: phase === PHASES.AI_SPEAKING ? '#3B82F6' : (phase === PHASES.LISTENING || phase === PHASES.COUNTDOWN) ? '#10B981' : '#CBD5E1',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '3px solid white', boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-              transition: 'background 0.3s'
+              padding: 10, borderRadius: '50%', background: phase === PHASES.AI_SPEAKING ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
+              transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
             }}>
-              {phase === PHASES.AI_SPEAKING ? <Volume2 size={13} color="white" /> : <Mic size={13} color="white" />}
+              <IndianAvatarInterviewer
+                isSpeaking={phase === PHASES.AI_SPEAKING}
+                currentWord={currentWord}
+                size={220}
+              />
+            </div>
+            {/* Minimal Status Indicator */}
+            <div style={{
+              position: 'absolute', bottom: 20, right: 10,
+              background: phase === PHASES.AI_SPEAKING ? '#4F46E5' : (phase === PHASES.LISTENING || phase === PHASES.COUNTDOWN) ? '#10B981' : '#E2E8F0',
+              borderRadius: '50%', width: 34, height: 34,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: '4px solid white', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              transition: 'background 0.4s ease',
+            }}>
+              {phase === PHASES.AI_SPEAKING ? <Volume2 size={16} color="white" /> : <Mic size={16} color="white" />}
             </div>
           </div>
 
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>AI Interviewer</p>
-
-          {/* Status Badge */}
-          <div style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 999, padding: '7px 18px', marginBottom: 28, transition: 'all 0.3s' }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: sc.color }}>{sc.label}</span>
-          </div>
-
-          {/* Question Box */}
-          {questionText && phase !== PHASES.INTRO && (
-            <div style={{ background: '#F8FAFC', border: '1px solid #F1F5F9', borderRadius: 16, padding: '20px 28px', width: '100%', maxWidth: 480, textAlign: 'center', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.03)' }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#CBD5E1', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Question {currentQuestion + 1}</p>
-              <p style={{ fontSize: 16, color: '#1E293B', lineHeight: 1.8, fontWeight: 500, margin: 0 }}>{questionText}</p>
+          <div style={{ textAlign: 'center', maxWidth: 460, zIndex: 1 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: sc.color, letterSpacing: '0.12em', textTransform: 'uppercase', background: sc.bg, padding: '4px 12px', borderRadius: 8, border: `1px solid ${sc.border}` }}>{sc.label}</span>
+            
+            {/* Question Display */}
+            <div style={{ marginTop: 24 }}>
+              {questionText && phase !== PHASES.INTRO ? (
+                <p style={{ fontSize: 19, color: '#1E293B', lineHeight: 1.6, fontWeight: 600, margin: 0, tracking: '-0.01em' }}>"{questionText}"</p>
+              ) : phase === PHASES.INTRO ? (
+                <p style={{ fontSize: 15, color: '#64748B', lineHeight: 1.7, margin: 0 }}>Welcome to your AI-guided interview. Focus on the screen and speak naturally when the indicator turns green.</p>
+              ) : null}
             </div>
-          )}
+          </div>
 
           {/* Start Button */}
           {phase === PHASES.INTRO && (
             <button
               onClick={startInterview}
-              style={{ marginTop: 8, padding: '16px 48px', borderRadius: 14, background: 'linear-gradient(135deg, #4F46E5, #6366F1)', color: 'white', border: 'none', fontWeight: 700, fontSize: 16, cursor: 'pointer', boxShadow: '0 8px 20px rgba(79,70,229,0.35)', transition: 'all 0.2s' }}
-              onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 28px rgba(79,70,229,0.4)'; }}
-              onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(79,70,229,0.35)'; }}
+              style={{ marginTop: 40, padding: '18px 44px', borderRadius: 16, background: '#1A1A1A', color: 'white', border: 'none', fontWeight: 700, fontSize: 15, cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.2)', transition: 'all 0.3s' }}
+              onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.background = '#000000'; }}
+              onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = '#1A1A1A'; }}
             >
-              🎙️ Start Interview
+              Start Session
             </button>
           )}
 
-          {/* Countdown bar */}
+          {/* Countdown indicator */}
           {phase === PHASES.COUNTDOWN && (
-            <div style={{ width: '100%', maxWidth: 360, marginTop: 24 }}>
-              <div style={{ height: 4, background: '#FEF3C7', borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${(silenceCountdown / 4) * 100}%`, background: '#F59E0B', borderRadius: 99, transition: 'width 1s linear' }} />
-              </div>
-              <p style={{ textAlign: 'center', fontSize: 12, color: '#92400E', marginTop: 8 }}>Silence detected — speak to continue</p>
+            <div style={{ position: 'absolute', bottom: 40, width: '100%', padding: '0 40px', boxSizing: 'border-box' }}>
+               <div style={{ height: 4, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
+                 <div style={{ height: '100%', width: `${(silenceCountdown / 4) * 100}%`, background: '#F59E0B', borderRadius: 99, transition: 'width 1s linear' }} />
+               </div>
+               <p style={{ textAlign: 'center', fontSize: 11, color: '#94A3B8', marginTop: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Moving forward automatically...</p>
             </div>
-          )}
-
-          {/* Reset mic */}
-          {(phase === PHASES.LISTENING || phase === PHASES.COUNTDOWN) && (
-            <button onClick={resetMic} style={{ marginTop: 20, background: 'none', border: '1px dashed #CBD5E1', borderRadius: 8, padding: '5px 12px', fontSize: 11, color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <RefreshCw size={12} /> Mic not working? Reset
-            </button>
           )}
         </div>
 
-        {/* Camera + Transcript Sidebar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* Candidate Feed & Analytics */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-          {/* Camera */}
-          <div style={{ background: '#0F172A', borderRadius: 18, overflow: 'hidden', aspectRatio: '4/3', border: '2px solid #E2E8F0', position: 'relative', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
-            <video ref={videoRef} autoPlay muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)', display: 'block' }} />
+          {/* Video Container - Minimalist Edge */}
+          <div style={{ background: '#000', borderRadius: 32, overflow: 'hidden', aspectRatio: '4/3', border: '1px solid #F1F5F9', position: 'relative', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.06)' }}>
+            <video ref={videoRef} autoPlay muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
             
-            {/* Warning Overlay */}
-            {warningMsg && (
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, background: 'rgba(239, 68, 68, 0.95)', color: 'white', fontSize: 11, fontWeight: 700, padding: '8px 6px', textAlign: 'center', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>
-                   <AlertTriangle size={14} /> {warningMsg}
-                </div>
-            )}
+            {/* Warning System - Overlaying Video */}
+            <AnimatePresence>
+              {warningMsg && (
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, background: 'rgba(239, 68, 68, 0.9)', backdropFilter: 'blur(8px)', color: 'white', fontSize: 12, fontWeight: 700, padding: '12px 16px', zIndex: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+                     <AlertTriangle size={16} /> {warningMsg}
+                  </div>
+              )}
+            </AnimatePresence>
 
-            <div style={{ position: 'absolute', top: warningMsg ? 40 : 10, left: 10, background: 'rgba(15,23,42,0.7)', backdropFilter: 'blur(4px)', borderRadius: 6, padding: '3px 9px', fontSize: 10, color: 'white', fontWeight: 700, letterSpacing: '0.04em', transition: 'top 0.3s' }}>YOU</div>
-            <div style={{ position: 'absolute', bottom: 10, right: 10, display: 'flex', alignItems: 'center', gap: 5, background: (phase === PHASES.LISTENING || phase === PHASES.COUNTDOWN) ? 'rgba(16,185,129,0.9)' : 'rgba(15,23,42,0.6)', borderRadius: 6, padding: '4px 9px', transition: 'background 0.3s' }}>
-              {(phase === PHASES.LISTENING || phase === PHASES.COUNTDOWN) ? <><div style={{ width: 5, height: 5, borderRadius: '50%', background: 'white', animation: 'blink 1s infinite' }} /><span style={{ fontSize: 10, color: 'white', fontWeight: 700 }}>MIC ON</span></> : <><Mic size={10} color="#94A3B8" /><span style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600 }}>MIC OFF</span></>}
+            <div style={{ position: 'absolute', bottom: 16, left: 16, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.2)', padding: '6px 14px', fontSize: 11, color: 'white', fontWeight: 800, letterSpacing: '0.04em' }}>CANDIDATE FEED</div>
+          </div>
+
+          {/* Voice Visualizer + Transcript Card */}
+          <div style={{ background: '#FFFFFF', borderRadius: 32, border: '1px solid #F1F5F9', padding: 28, flex: 1, display: 'flex', flexDirection: 'column', gap: 20, boxShadow: '0 10px 40px -10px rgba(0,0,0,0.02)' }}>
+            
+            {/* Modern Waveform */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 40, justifyContent: 'center' }}>
+              {bars.map((h, i) => (
+                <div key={i} style={{ width: 3, borderRadius: 99, background: phase === PHASES.AI_SPEAKING ? '#E2E8F0' : '#6366F1', height: `${(phase === PHASES.LISTENING || phase === PHASES.COUNTDOWN) ? h : 4}px`, transition: 'height 0.12s ease', opacity: (i < 4 || i > 11) ? 0.3 : 1 }} />
+              ))}
+            </div>
+
+            <div style={{ borderTop: '1px solid #F8FAFC', paddingTop: 20 }}>
+              <p style={{ fontSize: 10, fontWeight: 800, color: '#CBD5E1', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Live Transcript</p>
+              <div style={{ minHeight: 80 }}>
+                {(transcript || interimText) ? (
+                  <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, margin: 0, fontWeight: 500 }}>
+                    {transcript}<span style={{ color: '#94A3B8' }}>{interimText}</span>
+                  </p>
+                ) : (
+                  <p style={{ fontSize: 14, color: '#CBD5E1', fontStyle: 'italic', margin: 0 }}>{phase === PHASES.LISTENING ? 'Please speak now...' : 'Awaiting speech input...'}</p>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Waveform */}
-          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 14, padding: '8px 12px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
-            {bars.map((h, i) => (
-              <div key={i} style={{ width: 4, borderRadius: 99, background: phase === PHASES.COUNTDOWN ? '#F59E0B' : '#4F46E5', height: `${(phase === PHASES.LISTENING || phase === PHASES.COUNTDOWN) ? h : 6}px`, transition: 'height 0.12s ease', opacity: 0.8 }} />
-            ))}
-          </div>
-
-          {/* Transcript */}
-          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 16, padding: 16, flex: 1, minHeight: 120, overflow: 'hidden' }}>
-            <p style={{ fontSize: 10, fontWeight: 800, color: '#CBD5E1', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Live Transcript</p>
-            {(transcript || interimText) ? (
-              <p style={{ fontSize: 13, color: '#334155', lineHeight: 1.8, margin: 0, wordBreak: 'break-word' }}>
-                {transcript}<span style={{ color: '#94A3B8', fontStyle: 'italic' }}>{interimText}</span>
-              </p>
-            ) : (
-              <p style={{ fontSize: 13, color: '#CBD5E1', fontStyle: 'italic', margin: 0 }}>
-                {phase === PHASES.LISTENING ? 'Say something...' : 'Waiting...'}
-              </p>
-            )}
-          </div>
         </div>
       </div>
 
-      {/* ─── Bottom Progress ─── */}
-      <div style={{ width: '100%', maxWidth: 960 }}>
-        <div style={{ height: 4, background: '#E2E8F0', borderRadius: 99, overflow: 'hidden', marginBottom: 14 }}>
-          <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #4F46E5, #818CF8)', transition: 'width 0.8s ease' }} />
+      {/* ─── Control Center ─── */}
+      <div style={{ width: '100%', maxWidth: 1000, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#FFFFFF', padding: '16px 24px', borderRadius: 24, border: '1px solid #F1F5F9', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+        
+        {/* Progress Info */}
+        <div style={{ width: 180 }}>
+           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+             <span style={{ fontSize: 11, fontWeight: 800, color: '#94A3B8' }}>PROGRESS</span>
+             <span style={{ fontSize: 11, fontWeight: 800, color: '#6366F1' }}>{Math.round(progress)}%</span>
+           </div>
+           <div style={{ height: 4, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
+             <div style={{ height: '100%', width: `${progress}%`, background: '#6366F1', transition: 'width 0.8s' }} />
+           </div>
         </div>
-        {submitting ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#6366F1', fontSize: 13 }}>
-            <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Finalizing results...
-          </div>
-        ) : (
-          <p style={{ textAlign: 'center', fontSize: 12, color: '#94A3B8' }}>
-            🤖 Fully voice-controlled • No keyboard needed
-          </p>
-        )}
+
+        {/* Central Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={toggleMute}
+            style={{ width: 48, height: 48, borderRadius: 16, border: '1px solid #F1F5F9', background: isMuted ? '#EF4444' : '#FFFFFF', color: isMuted ? 'white' : '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}
+          >
+            {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+          </button>
+
+          {phase !== PHASES.INTRO && phase !== PHASES.DONE && (
+            <button
+              onClick={handleNextQuestion}
+              disabled={phase === PHASES.SAVING || phase === PHASES.AI_SPEAKING}
+              style={{ height: 48, padding: '0 28px', borderRadius: 16, background: '#6366F1', color: 'white', border: 'none', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 10px 20px -5px rgba(99, 102, 241, 0.4)', transition: 'all 0.2s', opacity: (phase === PHASES.SAVING || phase === PHASES.AI_SPEAKING) ? 0.6 : 1 }}
+            >
+              {phase === PHASES.SAVING ? 'Saving...' : isLastQuestion ? 'Submit Session' : 'Next Step'} <ChevronRight size={16} />
+            </button>
+          )}
+
+          <button
+            onClick={endInterview}
+            style={{ width: 48, height: 48, borderRadius: 16, border: '1px solid #FEE2E2', background: '#FFFFFF', color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+          >
+            <PhoneOff size={20} />
+          </button>
+        </div>
+
+        {/* Settings / Reset */}
+        <div style={{ width: 180, textAlign: 'right' }}>
+           <button onClick={resetMic} style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, opacity: 0.7 }}>
+             <RefreshCw size={12} /> SYNC MIC
+           </button>
+        </div>
       </div>
 
       <style>{`
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes spin { to{ transform:rotate(360deg) } }
+        body { background-color: #FAFAFA !important; }
       `}</style>
     </div>
   );

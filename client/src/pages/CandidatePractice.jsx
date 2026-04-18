@@ -1,13 +1,68 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BookOpen, Code2, BrainCircuit, Play, CheckCircle2, ChevronRight, Lock } from 'lucide-react';
 
 const mockChallenges = [
-  { id: 1, title: 'Two Sum', category: 'Algorithms', difficulty: 'Easy', status: 'completed' },
-  { id: 2, title: 'Reverse a Linked List', category: 'Data Structures', difficulty: 'Easy', status: 'completed' },
-  { id: 3, title: 'Merge Intervals', category: 'Algorithms', difficulty: 'Medium', status: 'unattempted' },
-  { id: 4, title: 'Valid Parentheses', category: 'Data Structures', difficulty: 'Easy', status: 'unattempted' },
-  { id: 5, title: 'Longest Palindromic Substring', category: 'Strings', difficulty: 'Medium', status: 'unattempted' },
-  { id: 6, title: 'LRU Cache Design', category: 'System Design', difficulty: 'Hard', status: 'locked' }
+  { 
+    id: 1, 
+    title: 'Two Sum', 
+    category: 'Algorithms', 
+    difficulty: 'Easy', 
+    status: 'completed',
+    description: 'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.',
+    starterCode: 'function twoSum(nums, target) {\n  // Your implementation here\n}',
+    tags: 'Easy · Hash Tables'
+  },
+  { 
+    id: 2, 
+    title: 'Reverse a Linked List', 
+    category: 'Data Structures', 
+    difficulty: 'Easy', 
+    status: 'completed',
+    description: 'Given the head of a singly linked list, reverse the list, and return the reversed list.',
+    starterCode: 'function reverseList(head) {\n  // Your implementation here\n}',
+    tags: 'Easy · Linked List'
+  },
+  { 
+    id: 3, 
+    title: 'Merge Intervals', 
+    category: 'Algorithms', 
+    difficulty: 'Medium', 
+    status: 'unattempted',
+    description: 'Given an array of intervals where intervals[i] = [starti, endi], merge all overlapping intervals.',
+    starterCode: 'function merge(intervals) {\n  // Your implementation here\n}',
+    tags: 'Medium · Sorting'
+  },
+  { 
+    id: 4, 
+    title: 'Valid Parentheses', 
+    category: 'Data Structures', 
+    difficulty: 'Easy', 
+    status: 'unattempted',
+    description: 'Given a string s containing just the characters "(", ")", "{", "}", "[" and "]", determine if the input string is valid.',
+    starterCode: 'function isValid(s) {\n  // Your implementation here\n}',
+    tags: 'Easy · String'
+  },
+  { 
+    id: 5, 
+    title: 'Longest Palindromic Substring', 
+    category: 'Strings', 
+    difficulty: 'Medium', 
+    status: 'unattempted',
+    description: 'Given a string s, return the longest palindromic substring in s.',
+    starterCode: 'function longestPalindrome(s) {\n  // Your implementation here\n}',
+    tags: 'Medium · Dynamic Programming'
+  },
+  { 
+    id: 6, 
+    title: 'LRU Cache Design', 
+    category: 'System Design', 
+    difficulty: 'Hard', 
+    status: 'locked',
+    description: 'Design a data structure that follows the constraints of a Least Recently Used (LRU) cache.',
+    starterCode: 'class LRUCache {\n  constructor(capacity) {\n    this.capacity = capacity;\n  }\n}',
+    tags: 'Hard · Design'
+  }
 ];
 
 const getDifficultyColor = (diff) => {
@@ -21,6 +76,17 @@ const getDifficultyColor = (diff) => {
 
 export default function CandidatePractice() {
   const [activeTab, setActiveTab] = useState('coding');
+  const navigate = useNavigate();
+
+  const handleStartChallenge = (challenge) => {
+    if (challenge.status === 'locked') return;
+    navigate('/coding', { 
+      state: { 
+        problem: challenge,
+        isPractice: true 
+      } 
+    });
+  };
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 0' }}>
@@ -95,7 +161,19 @@ export default function CandidatePractice() {
                 const isCompleted = challenge.status === 'completed';
                 
                 return (
-                  <div key={challenge.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: idx !== mockChallenges.length - 1 ? '1px solid #E2E8F0' : 'none', background: isLocked ? '#F8FAFC' : 'white', cursor: isLocked ? 'not-allowed' : 'pointer', transition: 'background 0.2s' }} onMouseOver={(e) => { if(!isLocked) e.currentTarget.style.background = '#F1F5F9'; }} onMouseOut={(e) => { if(!isLocked) e.currentTarget.style.background = 'white'; }}>
+                  <div 
+                    key={challenge.id} 
+                    onClick={() => handleStartChallenge(challenge)}
+                    style={{ 
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', 
+                      borderBottom: idx !== mockChallenges.length - 1 ? '1px solid #E2E8F0' : 'none', 
+                      background: isLocked ? '#F8FAFC' : 'white', 
+                      cursor: isLocked ? 'not-allowed' : 'pointer', 
+                      transition: 'background 0.2s' 
+                    }} 
+                    onMouseOver={(e) => { if(!isLocked) e.currentTarget.style.background = '#F1F5F9'; }} 
+                    onMouseOut={(e) => { if(!isLocked) e.currentTarget.style.background = 'white'; }}
+                  >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                       <div style={{ color: isCompleted ? '#22C55E' : '#CBD5E1' }}>
                         <CheckCircle2 size={22} fill={isCompleted ? '#DCFCE7' : 'none'} />
@@ -119,7 +197,11 @@ export default function CandidatePractice() {
                           Unlock at level 2
                         </button>
                       ) : (
-                        <button className={isCompleted ? "btn-outline" : "btn-primary"} style={{ padding: '6px 16px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleStartChallenge(challenge); }}
+                          className={isCompleted ? "btn-outline" : "btn-primary"} 
+                          style={{ padding: '6px 16px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}
+                        >
                           {isCompleted ? 'Review' : 'Solve'} <Play size={14} />
                         </button>
                       )}

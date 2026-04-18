@@ -122,7 +122,7 @@ export const generateMCQ = async (req, res) => {
 
 export const submitAssessment = async (req, res) => {
   try {
-    const { sessionId, answers, tabSwitchCount } = req.body;
+    const { sessionId, answers, tabSwitchCount, warnings } = req.body;
 
     if (!sessionId || !answers) {
       return res.status(400).json({ error: 'Session ID and answers are required' });
@@ -148,6 +148,7 @@ export const submitAssessment = async (req, res) => {
       session.answers = answers;
       session.score = score;
       session.tabSwitchCount = tabSwitchCount || 0;
+      session.warnings = warnings || 0;
       session.completedAt = new Date();
       session.testDurationSeconds = req.body.testDurationSeconds || 0;
       await session.save();

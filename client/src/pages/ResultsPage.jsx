@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   CheckCircle, XCircle, ChevronDown, ChevronUp, RotateCcw, AlertTriangle,
-  Download, Sparkles, TrendingUp, TrendingDown, Target
+  Download, Sparkles, TrendingUp, TrendingDown, Target, Loader
 } from 'lucide-react';
 import { useAssessment } from '../context/AssessmentContext';
 
@@ -128,16 +128,46 @@ function QuestionReview({ question, index, selectedAnswer, isOpen, onToggle }) {
 
 export default function ResultsPage() {
   const navigate = useNavigate();
-  const { state, dispatch } = useAssessment();
+  const location = useLocation();
+  const { state: assessmentState, dispatch } = useAssessment();
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [openQuestions, setOpenQuestions] = useState({});
 
-  const { questions, answers, score, tabSwitchCount } = state;
-
   useEffect(() => {
-    if (state.status !== 'completed' || score === null) {
+    const sessionId = location.state?.sessionId;
+    const fromHistory = location.state?.fromHistory;
+
+    if (fromHistory && sessionId) {
+      loadSession(sessionId);
+    } else if (assessmentState.status === 'completed' && assessmentState.score !== null) {
+      setSession(assessmentState);
+    } else {
       navigate('/');
     }
-  }, [state.status, score, navigate]);
+  }, [assessmentState, location.state, navigate]);
+
+  const loadSession = async (id) => {
+    setLoading(true);
+    try {
+      const data = await import('../services/api').then(m => m.getSession(id));
+      if (data) {
+        setSession({
+          ...data,
+          questions: data.questions || [],
+          answers: data.answers || {},
+          score: data.score
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      navigate('/');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const { questions = [], answers = {}, score = 0, tabSwitchCount = 0 } = session || {};
 
   const correctCount = useMemo(
     () => questions.filter((q) => answers[q.id] === q.correctAnswer).length,
@@ -152,7 +182,17 @@ export default function ResultsPage() {
     return { accuracy, integrity, communication };
   }, [correctCount, questions.length, tabSwitchCount]);
 
-  if (score === null) return null;
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 20 }}>
+         <Loader size={48} className="spin" color="#6366F1" />
+         <p style={{ fontSize: 16, fontWeight: 700, color: '#64748B' }}>Fetching your report...</p>
+         <style>{`@keyframes spin{to{transform:rotate(360deg)}} .spin{animation:spin 1s linear infinite}`}</style>
+      </div>
+    );
+  }
+
+  if (!session) return null;
 
   const toggle = (idx) => setOpenQuestions((p) => ({ ...p, [idx]: !p[idx] }));
   const expandAll = () => {

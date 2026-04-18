@@ -5,6 +5,7 @@ import { register, login, getProfile, updateProfile } from '../controllers/authC
 import { createJob, getJobs, getJobDetails, getJobCandidates, getJobByCode } from '../controllers/jobController.js';
 import { generateMCQ, submitAssessment, getSession, uploadRecording, uploadScreenRecording, getUserSessions } from '../controllers/mcqController.js';
 import { voiceChat } from '../controllers/voiceController.js';
+import { chatWithBot } from '../controllers/chatController.js';
 
 const router = Router();
 
@@ -31,6 +32,9 @@ router.get('/sessions/user', requireAuth, getUserSessions);
 
 // Voice Routes
 router.post('/voice-chat', requireAuth, voiceChat);
+
+// Bot Routes
+router.post('/chat', chatWithBot);
 
 // Health check
 router.get('/health', (req, res) => {
