@@ -894,30 +894,40 @@ function ViewCandidateModal({ candidate: c, status, onClose, onShortlist, onDele
                     <div
                       key={q.id || idx}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '8px 12px', borderRadius: 6,
-                        background: isCorrect ? '#ECFDF5' : '#FFF1F2',
-                        border: `1px solid ${isCorrect ? '#A7F3D0' : '#FECDD3'}`,
+                        padding: '12px 16px', borderRadius: 12,
+                        background: isCorrect ? '#F0FDF4' : '#FFF1F2',
+                        border: `1px solid ${isCorrect ? '#DCFCE7' : '#FFE4E6'}`,
+                        display: 'flex', flexDirection: 'column', gap: 10
                       }}
                     >
-                      <span style={{
-                        width: 18, height: 18, borderRadius: 999,
-                        background: isCorrect ? '#10B981' : '#F43F5E',
-                        color: '#FFFFFF', fontSize: 10, fontWeight: 700,
-                        display: 'grid', placeItems: 'center', flexShrink: 0,
-                      }}>
-                        {idx + 1}
-                      </span>
-                      <span style={{
-                        flex: 1, fontSize: 13,
-                        color: isCorrect ? '#065F46' : '#9F1239',
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      }}>
-                        {q.question}
-                      </span>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: isCorrect ? '#047857' : '#BE123C' }}>
-                        {isCorrect ? 'Correct' : 'Wrong'}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                        <div style={{ 
+                          width: 24, height: 24, borderRadius: 6, 
+                          background: isCorrect ? '#10B981' : '#F43F5E', 
+                          color: 'white', display: 'grid', placeItems: 'center', 
+                          fontSize: 11, fontWeight: 800, flexShrink: 0, marginTop: 2 
+                        }}>
+                          {idx + 1}
+                        </div>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: '#1E293B', lineHeight: 1.4 }}>{q.question}</p>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginLeft: 34 }}>
+                        <div style={{ fontSize: 11, color: isCorrect ? '#065F46' : '#991B1B' }}>
+                          <span style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Response:</span><br/>
+                          { (c.answers || {})[q.id] || 'Skipped' }
+                        </div>
+                        <div style={{ fontSize: 11, color: '#166534' }}>
+                          <span style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Best Approach:</span><br/>
+                          { q.correctAnswer }
+                        </div>
+                      </div>
+
+                      {q.explanation && (
+                         <div style={{ marginLeft: 34, fontSize: 11, color: '#64748B', fontStyle: 'italic', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: 8 }}>
+                           <Sparkles size={10} style={{ marginRight: 4, display: 'inline' }} /> {q.explanation}
+                         </div>
+                      )}
                     </div>
                   );
                 })}

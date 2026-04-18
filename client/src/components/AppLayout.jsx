@@ -2,12 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Settings, Video, BarChart3, Database, BookOpen, User, HelpCircle, LogOut, Briefcase, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Settings, Video, BarChart3, Database, BookOpen, User, HelpCircle, LogOut, Briefcase, ChevronDown, FileText } from 'lucide-react';
 
 const candidateNav = [
   { label: 'Dashboard', href: '/candidate', icon: LayoutDashboard, match: '/candidate' },
   { label: 'Practice Area', href: '/candidate/practice', icon: BookOpen, match: '/candidate/practice' },
   { label: 'My Profile', href: '/candidate/profile', icon: User, match: '/candidate/profile' },
+  { label: 'ATS Checker', href: '/candidate/ats', icon: FileText, match: '/candidate/ats' },
   { label: 'Help & Support', href: '/candidate/support', icon: HelpCircle, match: '/candidate/support' },
 ];
 
@@ -25,6 +26,7 @@ const titleMap = [
   // Candidate sub-routes (specific before generic)
   { match: '/candidate/practice', title: 'Practice Area' },
   { match: '/candidate/profile', title: 'My Profile' },
+  { match: '/candidate/ats', title: 'ATS Score Checker' },
   { match: '/candidate/support', title: 'Help & Support' },
   { match: '/candidate', title: 'Dashboard' },
   { match: '/check', title: 'System Check' },

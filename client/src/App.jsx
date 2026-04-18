@@ -21,7 +21,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
 import AdminSessionsPage from './pages/AdminSessionsPage';
 import JobManagementPage from './pages/JobManagementPage';
-// import { AdminSettings } from './pages/PlaceholderPages'; // No longer needed
+import CandidateATSChecker from './pages/CandidateATSChecker';
 
 function ProtectedRoute({ children, role }) {
   const { user } = useAuth();
@@ -62,6 +62,7 @@ function AppRoutes() {
         <Route path="/coding" element={<CodingTestPage />} />
         <Route path="/candidate/practice" element={<CandidatePractice />} />
         <Route path="/candidate/profile" element={<CandidateProfile />} />
+        <Route path="/candidate/ats" element={<CandidateATSChecker />} />
         <Route path="/candidate/support" element={<CandidateSupport />} />
         <Route path="/voice-interview" element={<VoiceInterviewPage />} />
       </Route>
