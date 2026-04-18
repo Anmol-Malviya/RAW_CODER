@@ -420,6 +420,51 @@ select.input-soft:focus {
   color: #334155;
 }
 
+/* ---------- Base Input (Profile / Forms) ---------- */
+.base-input {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 11px 14px;
+  color: #0F172A;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  width: 100%;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  box-sizing: border-box;
+}
+
+.base-input::placeholder {
+  color: #94A3B8;
+  font-weight: 400;
+}
+
+.base-input:hover:not(:disabled):not(:focus) {
+  border-color: #CBD5E1;
+  background: #FFFFFF;
+}
+
+.base-input:focus {
+  outline: none;
+  border-color: #6366F1;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.10), 0 1px 3px rgba(99, 102, 241, 0.06);
+}
+
+.base-input:disabled {
+  background: #F1F5F9;
+  border-color: #E2E8F0;
+  color: #94A3B8;
+  cursor: not-allowed;
+}
+
+textarea.base-input {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.6;
+}
+
 /* ---------- Pills / badges ---------- */
 .status-pill {
   display: inline-flex;

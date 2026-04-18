@@ -177,76 +177,136 @@ export default function CandidateProfile() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
         
         {/* Profile Settings Card */}
-        <div className="card" style={{ padding: 32 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 20, color: '#0F172A' }}>Personal Information</h2>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div className="card" style={{ padding: 0, borderRadius: 24, border: '1px solid #F1F5F9', boxShadow: '0 4px 24px rgba(0,0,0,0.03)', overflow: 'hidden' }}>
+          {/* Card Header */}
+          <div style={{ padding: '28px 36px 20px', borderBottom: '1px solid #F1F5F9' }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: '#1A1A1A', letterSpacing: '-0.02em', marginBottom: 4 }}>Personal Information</h2>
+            <p style={{ fontSize: 14, color: '#94A3B8', fontWeight: 500 }}>Keep your profile up to date for the best interview experience.</p>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div style={{ padding: '28px 36px 8px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+              
+              {/* Name & Email row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                <ProfileField
+                  label="Full Name"
+                  icon={<User size={16} />}
+                  iconBg="#EEF2FF"
+                  iconColor="#6366F1"
+                >
+                  <input type="text" name="name" value={formData.name} onChange={handleChange} className="base-input" style={{ paddingLeft: 42 }} placeholder="Your full name" required />
+                </ProfileField>
+
+                <ProfileField
+                  label="Email Address"
+                  hint="Cannot change"
+                  icon={<Mail size={16} />}
+                  iconBg="#F1F5F9"
+                  iconColor="#94A3B8"
+                >
+                  <input type="email" value={formData.email} disabled className="base-input" style={{ paddingLeft: 42 }} />
+                </ProfileField>
+              </div>
+
+              {/* Phone */}
+              <ProfileField
+                label="Phone Number"
+                icon={<Phone size={16} />}
+                iconBg="#F0FDF4"
+                iconColor="#10B981"
+              >
+                <input type="tel" name="phone" value={formData.profile.phone} onChange={handleChange} className="base-input" style={{ paddingLeft: 42 }} placeholder="+1 (555) 000-0000" />
+              </ProfileField>
+
+              {/* Section divider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ height: 1, flex: 1, background: '#F1F5F9' }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Links & Social</span>
+                <div style={{ height: 1, flex: 1, background: '#F1F5F9' }} />
+              </div>
+
+              {/* GitHub & LinkedIn row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                <ProfileField
+                  label="GitHub URL"
+                  icon={<Code size={16} />}
+                  iconBg="#F5F3FF"
+                  iconColor="#7C3AED"
+                >
+                  <input type="url" name="github" value={formData.profile.github} onChange={handleChange} className="base-input" style={{ paddingLeft: 42 }} placeholder="https://github.com/username" />
+                </ProfileField>
+
+                <ProfileField
+                  label="LinkedIn URL"
+                  icon={<Briefcase size={16} />}
+                  iconBg="#EFF6FF"
+                  iconColor="#3B82F6"
+                >
+                  <input type="url" name="linkedin" value={formData.profile.linkedin} onChange={handleChange} className="base-input" style={{ paddingLeft: 42 }} placeholder="https://linkedin.com/in/username" />
+                </ProfileField>
+              </div>
+
+              {/* Portfolio */}
+              <ProfileField
+                label="Portfolio Website"
+                icon={<LinkIcon size={16} />}
+                iconBg="#FEF3C7"
+                iconColor="#D97706"
+              >
+                <input type="url" name="portfolio" value={formData.profile.portfolio} onChange={handleChange} className="base-input" style={{ paddingLeft: 42 }} placeholder="https://mywebsite.com" />
+              </ProfileField>
+
+              {/* Section divider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ height: 1, flex: 1, background: '#F1F5F9' }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Skills & Bio</span>
+                <div style={{ height: 1, flex: 1, background: '#F1F5F9' }} />
+              </div>
+
+              {/* Skills */}
               <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Full Name</label>
-                <div className="input-with-icon" style={{ position: 'relative' }}>
-                  <User size={16} color="#94A3B8" style={{ position: 'absolute', left: 12, top: 10 }} />
-                  <input type="text" name="name" value={formData.name} onChange={handleChange} className="base-input" style={{ paddingLeft: 36, width: '100%', height: 38 }} required />
-                </div>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 8 }}>Top Skills</label>
+                <input type="text" name="skills" value={formData.profile.skills} onChange={handleChange} className="base-input" placeholder="React, Node.js, Python, TypeScript..." />
+                <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 6, fontWeight: 500 }}>Separate skills with commas — these will be highlighted on your profile.</p>
               </div>
+
+              {/* Bio */}
               <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Email Address (Cannot change)</label>
-                <div className="input-with-icon" style={{ position: 'relative' }}>
-                  <Mail size={16} color="#94A3B8" style={{ position: 'absolute', left: 12, top: 10 }} />
-                  <input type="email" value={formData.email} disabled className="base-input" style={{ paddingLeft: 36, width: '100%', height: 38, background: '#F8FAFC', color: '#94A3B8' }} />
-                </div>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 8 }}>Professional Bio</label>
+                <textarea name="bio" value={formData.profile.bio} onChange={handleChange} className="base-input" placeholder="Tell us about your experience, strengths, and what you're looking for..." style={{ minHeight: 120 }} />
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Phone Number</label>
-              <div className="input-with-icon" style={{ position: 'relative' }}>
-                <Phone size={16} color="#94A3B8" style={{ position: 'absolute', left: 12, top: 10 }} />
-                <input type="tel" name="phone" value={formData.profile.phone} onChange={handleChange} className="base-input" placeholder="+1 (555) 000-0000" style={{ paddingLeft: 36, width: '100%', height: 38 }} />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>GitHub URL</label>
-                <div className="input-with-icon" style={{ position: 'relative' }}>
-                  <Code size={16} color="#94A3B8" style={{ position: 'absolute', left: 12, top: 10 }} />
-                  <input type="url" name="github" value={formData.profile.github} onChange={handleChange} className="base-input" placeholder="https://github.com/username" style={{ paddingLeft: 36, width: '100%', height: 38 }} />
-                </div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>LinkedIn URL</label>
-                <div className="input-with-icon" style={{ position: 'relative' }}>
-                  <Briefcase size={16} color="#94A3B8" style={{ position: 'absolute', left: 12, top: 10 }} />
-                  <input type="url" name="linkedin" value={formData.profile.linkedin} onChange={handleChange} className="base-input" placeholder="https://linkedin.com/in/username" style={{ paddingLeft: 36, width: '100%', height: 38 }} />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Portfolio Website</label>
-              <div className="input-with-icon" style={{ position: 'relative' }}>
-                <LinkIcon size={16} color="#94A3B8" style={{ position: 'absolute', left: 12, top: 10 }} />
-                <input type="url" name="portfolio" value={formData.profile.portfolio} onChange={handleChange} className="base-input" placeholder="https://mywebsite.com" style={{ paddingLeft: 36, width: '100%', height: 38 }} />
-              </div>
-            </div>
-            
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Top Skills (Comma separated)</label>
-              <input type="text" name="skills" value={formData.profile.skills} onChange={handleChange} className="base-input" placeholder="React, Node.js, Python..." style={{ width: '100%', height: 38 }} />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Professional Bio</label>
-              <textarea name="bio" value={formData.profile.bio} onChange={handleChange} className="base-input" placeholder="Tell us about your experience..." style={{ width: '100%', height: 100, resize: 'vertical' }} />
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 16, marginTop: 10, paddingTop: 20, borderTop: '1px solid #E2E8F0' }}>
+            {/* Footer */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 16, padding: '20px 36px', borderTop: '1px solid #F1F5F9', background: '#FAFBFC' }}>
               {saveSuccess && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#10B981', fontSize: 14, fontWeight: 500 }}>
-                  <CheckCircle size={16} /> Saved Successfully
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#10B981', fontSize: 14, fontWeight: 600 }}>
+                  <CheckCircle size={16} /> Saved successfully
                 </span>
               )}
-              <button type="submit" disabled={saving} className="btn-primary" style={{ minWidth: 120 }}>
+              <button
+                type="submit"
+                disabled={saving}
+                style={{
+                  padding: '12px 28px',
+                  borderRadius: 14,
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #6366F1, #4F46E5)',
+                  color: '#FFFFFF',
+                  fontWeight: 800,
+                  fontSize: 14,
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  opacity: saving ? 0.7 : 1,
+                  boxShadow: '0 8px 24px -6px rgba(99, 102, 241, 0.35)',
+                  transition: 'all 0.25s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+                onMouseEnter={e => { if (!saving) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 12px 32px -6px rgba(99, 102, 241, 0.45)'; }}}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 24px -6px rgba(99, 102, 241, 0.35)'; }}
+              >
                 {saving ? 'Saving...' : 'Save Profile'}
               </button>
             </div>
@@ -283,6 +343,39 @@ export default function CandidateProfile() {
           )}
         </div>
 
+      </div>
+    </div>
+  );
+}
+
+/* ─── Reusable field wrapper with icon badge ─── */
+function ProfileField({ label, hint, icon, iconBg, iconColor, children }) {
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+        <label style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>{label}</label>
+        {hint && (
+          <span style={{
+            fontSize: 11, fontWeight: 600, color: '#94A3B8',
+            background: '#F8FAFC', padding: '2px 8px', borderRadius: 6,
+          }}>
+            {hint}
+          </span>
+        )}
+      </div>
+      <div style={{ position: 'relative' }}>
+        {/* Icon badge */}
+        <div style={{
+          position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+          width: 26, height: 26, borderRadius: 8,
+          background: iconBg || '#F1F5F9',
+          color: iconColor || '#94A3B8',
+          display: 'grid', placeItems: 'center',
+          zIndex: 1, pointerEvents: 'none',
+        }}>
+          {icon}
+        </div>
+        {children}
       </div>
     </div>
   );
