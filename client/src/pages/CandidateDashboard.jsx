@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { fetchJobs, getUserSessions } from '../services/api';
+import { getJobs, getUserSessions } from '../services/api';
 import { Briefcase, Search, ArrowRight, Clock, ClipboardList, FileText, CheckCircle, ChevronRight, BarChart3 } from 'lucide-react';
 
 export default function CandidateDashboard() {
@@ -20,7 +20,7 @@ export default function CandidateDashboard() {
     setLoading(true);
     try {
       const [jobsData, sessionsData] = await Promise.all([
-        fetchJobs(),
+        getJobs(),
         getUserSessions()
       ]);
       setJobs(jobsData);

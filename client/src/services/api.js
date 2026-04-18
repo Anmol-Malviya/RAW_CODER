@@ -28,8 +28,18 @@ export const updateProfile = async (data) => {
 };
 
 // Job endpoints
-export const fetchJobs = async () => {
+export const getJobs = async () => {
   const response = await api.get('/jobs');
+  return response.data;
+};
+
+export const patchJob = async (id, updates) => {
+  const response = await api.put(`/jobs/${id}`, updates);
+  return response.data;
+};
+
+export const removeJob = async (id) => {
+  const response = await api.delete(`/jobs/${id}`);
   return response.data;
 };
 

@@ -125,3 +125,45 @@ export const getJobByCode = async (req, res) => {
     res.status(500).json({ error: 'Failed to validate code' });
   }
 };
+
+export const updateJob = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body; // Accepts isActive, title, description, difficulty, etc.
+
+    if (isMockMode()) {
+      const idx = mockJobs.findIndex(j => j._id === id);
+      if (idx === -1) return res.status(404).json({ error: 'Job not found' });
+      mockJobs[idx] = { ...mockJobs[idx], ...updates };
+      return res.json(mockJobs[idx]);
+    }
+
+    const job = await Job.findOneAndUpdate(
+      { _id: id, adminId: req.user.id },
+      { $set: updates },
+      { new: true }
+    );
+    if (!job) return res.status(404).json({ error: 'Job not found or unauthorized' });
+    res.json(job);
+  } catch (error) {
+    console.error('Update Job Error:', error);
+    res.status(500).json({ error: 'Failed to update job' });
+  }
+};
+
+export const deleteJob = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (isMockMode()) {
+      const idx = mockJobs.findIndex(j => j._id === id);
+      if (idx !== -1) mockJobs.splice(idx, 1);
+      return res.json({ message: 'Job deleted (mock)' });
+    }
+
+    await Job.findOneAndDelete({ _id: id, adminId: req.user.id });
+    res.json({ message: 'Job deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete job' });
+  }
+};

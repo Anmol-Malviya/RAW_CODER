@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Settings, Video, BarChart3, Database, BookOpen, User, HelpCircle, LogOut } from 'lucide-react';
+import { LayoutDashboard, Settings, Video, BarChart3, Database, BookOpen, User, HelpCircle, LogOut, Settings2 } from 'lucide-react';
 
 const candidateNav = [
   { label: 'Dashboard', href: '/candidate', icon: LayoutDashboard, match: '/candidate' },
@@ -11,6 +11,7 @@ const candidateNav = [
 
 const adminNav = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, match: '/admin' },
+  { label: 'Manage Roles', href: '/admin/roles', icon: Settings2, match: '/admin/roles' },
   { label: 'Live Monitoring', href: '/admin/live', icon: Video, match: '/admin/live' },
   { label: 'Question Bank', href: '/admin/questions', icon: Database, match: '/admin/questions' },
   { label: 'Sessions', href: '/admin/sessions', icon: BookOpen, match: '/admin/sessions' },
@@ -25,6 +26,7 @@ const titleMap = [
   { match: '/results', title: 'Report' },
   { match: '/coding', title: 'Coding test' },
   { match: '/admin', title: 'Admin monitoring' },
+  { match: '/admin/roles', title: 'Role Management' },
   { match: '/admin/live', title: 'Live Monitoring' },
   { match: '/admin/sessions', title: 'Interview Sessions' },
 ];

@@ -19,6 +19,7 @@ import QuestionBankPage from './pages/QuestionBankPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
 import AdminSessionsPage from './pages/AdminSessionsPage';
+import JobManagementPage from './pages/JobManagementPage';
 // import { AdminSettings } from './pages/PlaceholderPages'; // No longer needed
 
 function ProtectedRoute({ children, role }) {
@@ -62,6 +63,7 @@ function AppRoutes() {
 
       <Route element={<ProtectedRoute role="admin"><AuthenticatedLayout /></ProtectedRoute>}>
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/roles" element={<JobManagementPage />} />
         <Route path="/admin/live" element={<AdminLiveMonitor />} />
         <Route path="/admin/questions" element={<QuestionBankPage />} />
         <Route path="/admin/sessions" element={<AdminSessionsPage />} />
