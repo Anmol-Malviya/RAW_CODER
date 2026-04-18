@@ -28,23 +28,18 @@ export const updateProfile = async (data) => {
 };
 
 // Job endpoints
-export const getJobs = async () => {
+export const fetchJobs = async () => {
   const response = await api.get('/jobs');
-  return response.data;
-};
-
-export const patchJob = async (id, updates) => {
-  const response = await api.put(`/jobs/${id}`, updates);
-  return response.data;
-};
-
-export const removeJob = async (id) => {
-  const response = await api.delete(`/jobs/${id}`);
   return response.data;
 };
 
 export const createJob = async (title, description, difficulty, interviewType, hasCodingRound) => {
   const response = await api.post('/jobs', { title, description, difficulty, interviewType, hasCodingRound });
+  return response.data;
+};
+
+export const updateJobStatus = async (jobId, isActive) => {
+  const response = await api.put(`/jobs/${jobId}/status`, { isActive });
   return response.data;
 };
 

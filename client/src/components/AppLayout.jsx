@@ -1,9 +1,9 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Settings, Video, BarChart3, Database, BookOpen, User, HelpCircle, LogOut, Settings2 } from 'lucide-react';
+import { LayoutDashboard, Settings, Video, BarChart3, Database, BookOpen, User, HelpCircle, LogOut, Briefcase } from 'lucide-react';
 
 const candidateNav = [
-  { label: 'Dashboard', href: '/candidate', icon: LayoutDashboard, match: '/candidate', exact: true },
+  { label: 'Dashboard', href: '/candidate', icon: LayoutDashboard, match: '/candidate' },
   { label: 'Practice Area', href: '/candidate/practice', icon: BookOpen, match: '/candidate/practice' },
   { label: 'My Profile', href: '/candidate/profile', icon: User, match: '/candidate/profile' },
   { label: 'Help & Support', href: '/candidate/support', icon: HelpCircle, match: '/candidate/support' },
@@ -11,7 +11,7 @@ const candidateNav = [
 
 const adminNav = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, match: '/admin', exact: true },
-  { label: 'Manage Roles', href: '/admin/roles', icon: Settings2, match: '/admin/roles' },
+  { label: 'Manage Roles', href: '/admin/roles', icon: Briefcase, match: '/admin/roles' },
   { label: 'Live Monitoring', href: '/admin/live', icon: Video, match: '/admin/live' },
   { label: 'Question Bank', href: '/admin/questions', icon: Database, match: '/admin/questions' },
   { label: 'Sessions', href: '/admin/sessions', icon: BookOpen, match: '/admin/sessions' },
@@ -26,7 +26,6 @@ const titleMap = [
   { match: '/results', title: 'Report' },
   { match: '/coding', title: 'Coding test' },
   { match: '/admin', title: 'Admin monitoring' },
-  { match: '/admin/roles', title: 'Role Management' },
   { match: '/admin/live', title: 'Live Monitoring' },
   { match: '/admin/sessions', title: 'Interview Sessions' },
 ];
@@ -60,9 +59,7 @@ export default function AppLayout() {
           <p className="sidebar-section-label">Workspace</p>
           <nav className="sidebar-nav">
             {items.map((item) => {
-              const active = item.exact 
-                ? location.pathname === item.match || location.pathname === `${item.match}/`
-                : location.pathname.startsWith(item.match);
+              const active = item.exact ? location.pathname === item.match : location.pathname.startsWith(item.match);
               const Icon = item.icon;
               return (
                 <Link

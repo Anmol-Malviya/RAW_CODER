@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { getJobs, createJob, getJobCandidates } from '../services/api';
+import { fetchJobs, createJob, getJobCandidates } from '../services/api';
 import {
   Plus, Users, AlertTriangle, Briefcase, Search, X, Download, Eye,
   MoreHorizontal, TrendingUp, CheckCircle2, Trash2, Star, StarOff, RotateCcw,
@@ -73,7 +73,7 @@ export default function AdminDashboard() {
   const loadJobs = async () => {
     try {
       setLoading(true);
-      const data = await getJobs();
+      const data = await fetchJobs();
       setJobs(data);
     } catch (e) {
       console.error(e);
