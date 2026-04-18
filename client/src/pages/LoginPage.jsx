@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginUser, registerUser } from '../services/api';
-import { Mail, Lock, User, Sparkles, ShieldCheck, LineChart } from 'lucide-react';
+import { Mail, Lock, User, Sparkles, ShieldCheck, LineChart, ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [searchParams] = useSearchParams();
+  const [isLogin, setIsLogin] = useState(searchParams.get('mode') !== 'signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -15,6 +16,10 @@ export default function LoginPage() {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setIsLogin(searchParams.get('mode') !== 'signup');
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,9 +59,32 @@ export default function LoginPage() {
         className="login-left"
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 48 }}>
-          <div className="brand-mark">A</div>
-          <span style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>AI Interviewer</span>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+            }}
+          >
+            <div className="brand-mark">A</div>
+            <span style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>AI Interviewer</span>
+          </button>
         </div>
+
+        <button
+          onClick={() => navigate('/')}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 32,
+            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+            fontSize: 13, fontWeight: 600, color: '#6366F1',
+            transition: 'color 0.2s',
+          }}
+          onMouseOver={(e) => e.currentTarget.style.color = '#4F46E5'}
+          onMouseOut={(e) => e.currentTarget.style.color = '#6366F1'}
+        >
+          <ArrowLeft size={14} />
+          Back to Home
+        </button>
 
         <h1 style={{ fontSize: 44, fontWeight: 700, color: '#0F172A', lineHeight: 1.1, letterSpacing: '-0.02em', maxWidth: 640 }}>
           Hire faster with AI-powered interviews

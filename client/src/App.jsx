@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import { AssessmentProvider } from './context/AssessmentContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AppLayout from './components/AppLayout';
+import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import CandidateDashboard from './pages/CandidateDashboard';
@@ -25,7 +26,7 @@ import JobManagementPage from './pages/JobManagementPage';
 function ProtectedRoute({ children, role }) {
   const { user } = useAuth();
 
-  if (!user) return <Navigate to="/" replace />;
+  if (!user) return <Navigate to="/login" replace />;
   if (role && user.role !== role) {
     return <Navigate to={user.role === 'admin' ? '/admin' : '/candidate'} replace />;
   }
@@ -46,7 +47,11 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/candidate'} replace /> : <LoginPage />} />
+      {/* Public landing page */}
+      <Route path="/" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/candidate'} replace /> : <HomePage />} />
+
+      {/* Login / Signup page */}
+      <Route path="/login" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/candidate'} replace /> : <LoginPage />} />
 
       <Route element={<ProtectedRoute role="candidate"><AuthenticatedLayout /></ProtectedRoute>}>
         <Route path="/candidate" element={<CandidateDashboard />} />
