@@ -1,24 +1,20 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export function useProctoring() {
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
   const [showWarning, setShowWarning] = useState(false);
-  const [cameraStream, setCameraStream] = useState(null);
-  const [cameraError, setCameraError] = useState(null);
+  const [lastWarningMsg, setLastWarningMsg] = useState('');
   const [isActive, setIsActive] = useState(false);
-  const videoRef = useRef(null);
 
-  const handleBlur = useCallback(() => {
+  const handleTabViolation = useCallback(() => {
     if (isActive) {
       setTabSwitchCount((prev) => prev + 1);
+      setLastWarningMsg('⚠️ TAB SWITCH DETECTED: Please stay on the assessment page to avoid disqualification.');
       setShowWarning(true);
+      // Auto-dismiss warning after 5 seconds
+      setTimeout(() => setShowWarning(false), 5000);
     }
   }, [isActive]);
-
-  const handleFocus = useCallback(() => {
-    // Auto-dismiss warning after returning
-    setTimeout(() => setShowWarning(false), 2000);
-  }, []);
 
   const preventCopy = useCallback((e) => {
     if (isActive) {
@@ -35,65 +31,44 @@ export function useProctoring() {
   }, [isActive]);
 
   // Activate proctoring
-  const activate = useCallback(async () => {
+  const activate = useCallback(() => {
     setIsActive(true);
-
-    // Request camera
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-      setCameraStream(stream);
-    } catch (err) {
-      console.warn('Camera access denied:', err.message);
-      setCameraError('Camera access denied. Proceeding without visual proctoring.');
-    }
   }, []);
 
   // Deactivate proctoring
   const deactivate = useCallback(() => {
     setIsActive(false);
-    if (cameraStream) {
-      cameraStream.getTracks().forEach((track) => track.stop());
-      setCameraStream(null);
-    }
-  }, [cameraStream]);
+  }, []);
 
   useEffect(() => {
     if (isActive) {
-      window.addEventListener('blur', handleBlur);
-      window.addEventListener('focus', handleFocus);
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') {
+          handleTabViolation();
+        }
+      };
+
+      window.addEventListener('blur', handleTabViolation);
+      document.addEventListener('visibilitychange', handleVisibilityChange);
       document.addEventListener('copy', preventCopy);
       document.addEventListener('paste', preventCopy);
       document.addEventListener('contextmenu', preventContextMenu);
+
+      return () => {
+        window.removeEventListener('blur', handleTabViolation);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        document.removeEventListener('copy', preventCopy);
+        document.removeEventListener('paste', preventCopy);
+        document.removeEventListener('contextmenu', preventContextMenu);
+      };
     }
-
-    return () => {
-      window.removeEventListener('blur', handleBlur);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('copy', preventCopy);
-      document.removeEventListener('paste', preventCopy);
-      document.removeEventListener('contextmenu', preventContextMenu);
-    };
-  }, [isActive, handleBlur, handleFocus, preventCopy, preventContextMenu]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, [cameraStream]);
+  }, [isActive, handleTabViolation, preventCopy, preventContextMenu]);
 
   return {
     tabSwitchCount,
     showWarning,
-    cameraStream,
-    cameraError,
+    lastWarningMsg,
     isActive,
-    videoRef,
     activate,
     deactivate,
     dismissWarning: () => setShowWarning(false),

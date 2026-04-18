@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Clock, Play, Send, FileCode2, Terminal, AlertTriangle } from 'lucide-react';
 import { useAssessment } from '../context/AssessmentContext';
-import { Clock, Play, Send, FileCode2, Terminal } from 'lucide-react';
+import { useProctoring } from '../hooks/useProctoring';
 
 const LANGUAGES = ['JavaScript', 'TypeScript', 'Python', 'Java', 'Go'];
 
@@ -15,7 +17,8 @@ function filterJobs(jobs, keyword) {
 export default function CodingTestPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { state: assessmentState } = useAssessment();
+  const { state: assessmentState, dispatch } = useAssessment();
+  const proctoring = useProctoring();
   const [isPractice, setIsPractice] = useState(location.state?.isPractice || false);
   const [problemData, setProblemData] = useState(location.state?.problem || {});
   
@@ -36,6 +39,21 @@ export default function CodingTestPage() {
     const id = setInterval(() => setTimeLeft((t) => Math.max(0, t - 1)), 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Activate Proctoring
+  useEffect(() => {
+    if (!isPractice) {
+      proctoring.activate();
+      return () => proctoring.deactivate();
+    }
+  }, [isPractice]);
+
+  // Sync tab switch count with assessment context
+  useEffect(() => {
+    if (proctoring.tabSwitchCount > 0 && !isPractice) {
+      dispatch({ type: 'TAB_SWITCH' });
+    }
+  }, [proctoring.tabSwitchCount, isPractice, dispatch]);
 
   const mins = Math.floor(timeLeft / 60);
   const secs = timeLeft % 60;
@@ -76,6 +94,46 @@ export default function CodingTestPage() {
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto', padding: '24px' }}>
+      {/* Warning Overlay */}
+      <AnimatePresence>
+        {proctoring.showWarning && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            style={{
+              position: 'fixed',
+              bottom: 40,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1000,
+              width: '100%',
+              maxWidth: 500,
+              padding: '0 20px',
+              pointerEvents: 'none'
+            }}
+          >
+            <div style={{
+              background: '#EF4444',
+              color: 'white',
+              padding: '16px 24px',
+              borderRadius: 12,
+              boxShadow: '0 20px 50px rgba(239, 68, 68, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              border: '1px solid rgba(255,255,255,0.2)',
+              pointerEvents: 'auto'
+            }}>
+              <AlertTriangle size={24} />
+              <div>
+                <p style={{ fontWeight: 800, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Security Alert</p>
+                <p style={{ fontSize: 14, opacity: 0.9, marginTop: 2 }}>{proctoring.lastWarningMsg}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>

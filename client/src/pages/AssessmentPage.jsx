@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, AlertTriangle, Eye, Mic, MicOff, Video, PhoneOff, Circle } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { useAssessment } from '../context/AssessmentContext';
@@ -299,13 +300,56 @@ export default function AssessmentPage() {
           <div style={{ width: 8, height: 8, borderRadius: 999, background: '#F43F5E', boxShadow: '0 0 0 4px rgba(244,63,94,0.2)' }} />
           <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.04em' }}>LIVE INTERVIEW</span>
           <span style={{ fontSize: 13, color: '#94A3B8' }}>·</span>
-          <span style={{ fontSize: 13, color: '#CBD5E1' }}>{jobRole || 'Technical screening'}</span>
+            <span style={{ fontSize: 13, color: '#CBD5E1' }}>{jobRole || 'Technical screening'}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <span style={{ fontSize: 13, color: '#94A3B8' }}>Question {currentQuestion + 1} of {questions.length}</span>
+            <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 14, color: '#E2E8F0', padding: '4px 10px', borderRadius: 6, background: '#1E293B' }}>{clock}</span>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span style={{ fontSize: 13, color: '#94A3B8' }}>Question {currentQuestion + 1} of {questions.length}</span>
-          <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 14, color: '#E2E8F0', padding: '4px 10px', borderRadius: 6, background: '#1E293B' }}>{clock}</span>
-        </div>
-      </div>
+
+        {/* Warning Overlay */}
+        <AnimatePresence>
+          {proctoring.showWarning && (
+            <motion.div
+              initial={{ opacity: 0, y: -50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50 }}
+              style={{
+                position: 'fixed',
+                top: 70,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 100,
+                width: '100%',
+                maxWidth: 600,
+                padding: '0 20px',
+                pointerEvents: 'none'
+              }}
+            >
+              <div style={{
+                background: '#EF4444',
+                color: 'white',
+                padding: '16px 24px',
+                borderRadius: 12,
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                border: '2px solid rgba(255,255,255,0.2)',
+                pointerEvents: 'auto'
+              }}>
+                <div style={{ background: 'rgba(255,255,255,0.2)', padding: 8, borderRadius: 8 }}>
+                  <AlertTriangle size={24} />
+                </div>
+                <div>
+                  <p style={{ fontWeight: 800, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Security Violation</p>
+                  <p style={{ fontSize: 14, opacity: 0.9, marginTop: 2 }}>{proctoring.lastWarningMsg || 'Suspicious activity detected. This incident has been logged.'}</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       {/* Progress bar */}
       <div style={{ height: 2, background: '#1E293B' }}>

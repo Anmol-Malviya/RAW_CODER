@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, Volume2, Loader, RefreshCw, AlertTriangle, PhoneOff, CheckCircle, ChevronRight, Check, Bot } from 'lucide-react';
 import { io } from 'socket.io-client';
 import IndianAvatarInterviewer from '../components/IndianAvatarInterviewer';
 import { useAssessment } from '../context/AssessmentContext';
+import { useProctoring } from '../hooks/useProctoring';
 import { submitAssessment } from '../services/api';
 import '@tensorflow/tfjs';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
@@ -25,6 +26,7 @@ const PHASES = {
 export default function VoiceInterviewPage() {
   const navigate = useNavigate();
   const { state, dispatch } = useAssessment();
+  const proctoring = useProctoring();
 
   // ── State ──
   const [phase, setPhase] = useState(PHASES.INTRO);
@@ -36,10 +38,10 @@ export default function VoiceInterviewPage() {
   const [submitting, setSubmitting] = useState(false);
   const [ready, setReady] = useState(false); // camera/mic ready
   const [warnings, setWarnings] = useState(0);
-  const [warningMsg, setWarningMsg] = useState('');
-  // Avatar lip-sync state
   const [currentWord, setCurrentWord] = useState('');
   const [isMuted, setIsMuted] = useState(false);
+  const [visualWarningMsg, setVisualWarningMsg] = useState('');
+  const [proctoringWarningMsg, setProctoringWarningMsg] = useState('');
 
   // ── Refs ──
   const recognitionRef = useRef(null);
@@ -82,6 +84,25 @@ export default function VoiceInterviewPage() {
     const id = setInterval(() => setElapsed(e => e + 1), 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Activate Proctoring
+  useEffect(() => {
+    proctoring.activate();
+    return () => proctoring.deactivate();
+  }, []);
+
+  // Sync tab switch warnings
+  useEffect(() => {
+    if (proctoring.showWarning) {
+      setProctoringWarningMsg(proctoring.lastWarningMsg);
+      setWarnings(prev => prev + 1);
+      dispatch({ type: 'TAB_SWITCH' });
+    } else {
+      setProctoringWarningMsg('');
+    }
+  }, [proctoring.showWarning]);
+
+  const warningMsg = proctoringWarningMsg || visualWarningMsg;
 
   const formatTime = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
@@ -169,9 +190,9 @@ export default function VoiceInterviewPage() {
         // Filler Word Detection (Low Confidence & Fluency Check)
         const fillerMatch = fin.match(/\b(um+|uh+|hm+|hmm+|ah+|ha+|like)\b/gi);
         if (fillerMatch && fillerMatch.length > 0) {
-           setWarningMsg('⚠️ LOW CONFIDENCE: Avoid filler words (' + fillerMatch[0].toLowerCase() + '). Keep a fluent, anchor-like flow!');
+           setVisualWarningMsg('⚠️ LOW CONFIDENCE: Avoid filler words (' + fillerMatch[0].toLowerCase() + '). Keep a fluent, anchor-like flow!');
            setWarnings(prev => prev + 1);
-           setTimeout(() => setWarningMsg(''), 3500);
+           setTimeout(() => setVisualWarningMsg(''), 3500);
         }
       }
       setInterimText(tmp);
@@ -282,10 +303,10 @@ export default function VoiceInterviewPage() {
       else if (hasBookOrPaper) msg = '⚠️ BOOK OR PAPER DETECTED';
 
       if (msg) {
-         setWarningMsg(msg);
+         setVisualWarningMsg(msg);
          setWarnings(prev => prev + 1);
       } else {
-         setWarningMsg('');
+         setVisualWarningMsg('');
       }
     } catch (e) {
       console.warn('Detection skipped');
@@ -601,9 +622,14 @@ export default function VoiceInterviewPage() {
             {/* Warning System - Overlaying Video */}
             <AnimatePresence>
               {warningMsg && (
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, background: 'rgba(239, 68, 68, 0.9)', backdropFilter: 'blur(8px)', color: 'white', fontSize: 12, fontWeight: 700, padding: '12px 16px', zIndex: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
-                     <AlertTriangle size={16} /> {warningMsg}
-                  </div>
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, background: 'rgba(239, 68, 68, 0.9)', backdropFilter: 'blur(8px)', color: 'white', fontSize: 12, fontWeight: 700, padding: '12px 16px', zIndex: 10, display: 'flex', alignItems: 'center', gap: 10 }}
+                >
+                  <AlertTriangle size={16} /> {warningMsg}
+                </motion.div>
               )}
             </AnimatePresence>
 
