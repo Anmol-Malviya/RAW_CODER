@@ -246,16 +246,19 @@ export default function VoiceInterviewPage() {
       const predictions = await modelRef.current.detect(videoRef.current);
       let personCount = 0;
       let hasPhone = false;
+      let hasBookOrPaper = false;
       
       predictions.forEach(p => {
         if (p.class === 'person') personCount++;
-        if (p.class === 'cell phone') hasPhone = true;
+        if (p.class === 'cell phone' || p.class === 'remote') hasPhone = true;
+        if (p.class === 'book') hasBookOrPaper = true;
       });
 
       let msg = '';
       if (personCount === 0) msg = '⚠️ FACE NOT DETECTED (Please look at camera)';
       else if (personCount > 1) msg = '⚠️ MULTIPLE PERSONS DETECTED';
-      else if (hasPhone) msg = '⚠️ PHONE/DEVICE DETECTED';
+      else if (hasPhone) msg = '⚠️ MOBILE PHONE DETECTED';
+      else if (hasBookOrPaper) msg = '⚠️ BOOK OR PAPER DETECTED';
 
       if (msg) {
          setWarningMsg(msg);
