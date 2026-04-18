@@ -22,6 +22,7 @@ export default function AdminDashboard() {
     hasCodingRound: false
   });
   const [isPosting, setIsPosting] = useState(false);
+  const [latestJob, setLatestJob] = useState(null);
 
   const [filterScore, setFilterScore] = useState('all');
   const [filterFlags, setFilterFlags] = useState('all');
@@ -101,8 +102,8 @@ export default function AdminDashboard() {
     e.preventDefault();
     setIsPosting(true);
     try {
-      await createJob(newJob.title, newJob.description, newJob.difficulty, newJob.interviewType, newJob.hasCodingRound);
-      setShowNewJobModal(false);
+      const created = await createJob(newJob.title, newJob.description, newJob.difficulty, newJob.interviewType, newJob.hasCodingRound);
+      setLatestJob(created); // New state to show success
       setNewJob({ 
         title: '', 
         description: '',
@@ -113,6 +114,7 @@ export default function AdminDashboard() {
       await loadJobs();
     } catch (e) {
       console.error(e);
+      alert('Failed to create job. Please try again.');
     } finally {
       setIsPosting(false);
     }
@@ -258,7 +260,7 @@ export default function AdminDashboard() {
         <div style={{ width: 1, height: 24, background: '#E2E8F0', margin: '0 4px' }} />
         <Select value={selectedJobId} onChange={setSelectedJobId} label="Role">
           <option value="all">All roles</option>
-          {jobs.map((j) => <option key={j._id} value={j._id}>{j.title}</option>)}
+          {jobs.map((j) => <option key={j._id} value={j._id}>{j.title} [{j.interviewCode || 'NO CODE'}]</option>)}
         </Select>
         <Select value={filterScore} onChange={setFilterScore} label="Score">
           <option value="all">All scores</option>
@@ -481,84 +483,117 @@ export default function AdminDashboard() {
           >
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <h2 style={{ fontSize: 17, fontWeight: 600, color: '#0F172A' }}>Post a new role</h2>
-                <p style={{ marginTop: 2, fontSize: 12, color: '#64748B' }}>This context will be used to generate candidate assessments.</p>
+                <h2 style={{ fontSize: 17, fontWeight: 600, color: '#0F172A' }}>{latestJob ? 'Role Deployed Successfully!' : 'Post a new role'}</h2>
+                <p style={{ marginTop: 2, fontSize: 12, color: '#64748B' }}>
+                  {latestJob ? 'Share this code with candidates to start their interview.' : 'This context will be used to generate candidate assessments.'}
+                </p>
               </div>
-              <button onClick={() => setShowNewJobModal(false)} className="btn-ghost" style={{ padding: 6 }}>
+              <button onClick={() => { setShowNewJobModal(false); setLatestJob(null); }} className="btn-ghost" style={{ padding: 6 }}>
                 <X size={16} />
               </button>
             </div>
-            <form onSubmit={handleCreateJob} style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div>
-                <label className="field-label">Job title</label>
-                <input
-                  required autoFocus
-                  placeholder="e.g. Senior Frontend Engineer"
-                  value={newJob.title}
-                  onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
-                  className="input-soft"
-                />
-              </div>
-              <div>
-                <label className="field-label">Description & requirements</label>
-                <textarea
-                  required rows={5}
-                  placeholder="Paste the full responsibilities and technical stack…"
-                  value={newJob.description}
-                  onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
-                  className="input-soft"
-                  style={{ resize: 'vertical', fontFamily: 'inherit' }}
-                />
-              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div>
-                  <label className="field-label">Difficulty</label>
-                  <select
-                    className="input-soft"
-                    value={newJob.difficulty}
-                    onChange={(e) => setNewJob({ ...newJob, difficulty: e.target.value })}
-                  >
-                    <option value="beginner">Beginner</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="advanced">Advanced</option>
-                  </select>
+            {latestJob ? (
+              <div style={{ padding: 32, textAlign: 'center' }}>
+                <div style={{ width: 64, height: 64, background: '#ECFDF5', color: '#10B981', borderRadius: 20, display: 'grid', placeItems: 'center', margin: '0 auto 20px' }}>
+                  <CheckCircle2 size={32} />
                 </div>
-                <div>
-                  <label className="field-label">Interview Type</label>
-                  <select
-                    className="input-soft"
-                    value={newJob.interviewType}
-                    onChange={(e) => setNewJob({ ...newJob, interviewType: e.target.value })}
-                  >
-                    <option value="technical">Technical</option>
-                    <option value="HR">HR</option>
-                    <option value="mixed">Mixed</option>
-                  </select>
+                <p style={{ fontSize: 14, color: '#64748B', marginBottom: 8 }}>Candidate Join Code</p>
+                <div style={{ 
+                  fontSize: 42, 
+                  fontWeight: 900, 
+                  color: '#4F46E5', 
+                  letterSpacing: '0.1em', 
+                  background: '#F8FAFC', 
+                  padding: '16px 24px', 
+                  borderRadius: 16,
+                  border: '1px dashed #6366F1',
+                  display: 'inline-block',
+                  fontFamily: 'monospace'
+                }}>
+                  {latestJob.interviewCode}
                 </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
-                <input
-                  type="checkbox"
-                  id="hasCoding"
-                  checked={newJob.hasCodingRound}
-                  onChange={(e) => setNewJob({ ...newJob, hasCodingRound: e.target.checked })}
-                  style={{ width: 16, height: 16, cursor: 'pointer' }}
-                />
-                <label htmlFor="hasCoding" style={{ fontSize: 13, fontWeight: 500, color: '#334155', cursor: 'pointer' }}>
-                  Enable Coding Round
-                </label>
-              </div>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 6 }}>
-                <button type="button" className="btn-secondary" onClick={() => setShowNewJobModal(false)} disabled={isPosting}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary" disabled={isPosting}>
-                  {isPosting ? 'Posting…' : 'Create role'}
+                <button 
+                  onClick={() => { setShowNewJobModal(false); setLatestJob(null); }}
+                  className="btn-primary"
+                  style={{ width: '100%', marginTop: 32, height: 44 }}
+                >
+                  Done
                 </button>
               </div>
-            </form>
+            ) : (
+              <form onSubmit={handleCreateJob} style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div>
+                  <label className="field-label">Job title</label>
+                  <input
+                    required autoFocus
+                    placeholder="e.g. Senior Frontend Engineer"
+                    value={newJob.title}
+                    onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
+                    className="input-soft"
+                  />
+                </div>
+                <div>
+                  <label className="field-label">Description & requirements</label>
+                  <textarea
+                    required rows={5}
+                    placeholder="Paste the full responsibilities and technical stack…"
+                    value={newJob.description}
+                    onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
+                    className="input-soft"
+                    style={{ resize: 'vertical', fontFamily: 'inherit' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div>
+                    <label className="field-label">Difficulty</label>
+                    <select
+                      className="input-soft"
+                      value={newJob.difficulty}
+                      onChange={(e) => setNewJob({ ...newJob, difficulty: e.target.value })}
+                    >
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="field-label">Interview Type</label>
+                    <select
+                      className="input-soft"
+                      value={newJob.interviewType}
+                      onChange={(e) => setNewJob({ ...newJob, interviewType: e.target.value })}
+                    >
+                      <option value="technical">Technical</option>
+                      <option value="HR">HR</option>
+                      <option value="mixed">Mixed</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
+                  <input
+                    type="checkbox"
+                    id="hasCoding"
+                    checked={newJob.hasCodingRound}
+                    onChange={(e) => setNewJob({ ...newJob, hasCodingRound: e.target.checked })}
+                    style={{ width: 16, height: 16, cursor: 'pointer' }}
+                  />
+                  <label htmlFor="hasCoding" style={{ fontSize: 13, fontWeight: 500, color: '#334155', cursor: 'pointer' }}>
+                    Enable Coding Round
+                  </label>
+                </div>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 6 }}>
+                  <button type="button" className="btn-secondary" onClick={() => setShowNewJobModal(false)} disabled={isPosting}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary" disabled={isPosting}>
+                    {isPosting ? 'Posting…' : 'Create role'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

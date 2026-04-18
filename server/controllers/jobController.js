@@ -3,8 +3,9 @@ import Session from '../models/Session.js';
 import mongoose from 'mongoose';
 
 const mockJobs = [
-  { _id: 'mock_job_1', title: 'Senior Software Engineer', description: 'Expert in React and Node.js', adminId: 'mock_admin', isActive: true, createdAt: new Date() }
+  { _id: 'mock_job_1', title: 'Senior Software Engineer', description: 'Expert in React and Node.js', adminId: 'mock_admin', interviewCode: 'VYOR01', isActive: true, createdAt: new Date() }
 ];
+
 const isMockMode = () => mongoose.connection.readyState !== 1;
 
 export const createJob = async (req, res) => {
@@ -16,7 +17,10 @@ export const createJob = async (req, res) => {
     }
 
     // Generate unique 6-digit interview code
-    const interviewCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const interviewCode = Array.from({ length: 6 }, () => 
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".charAt(Math.floor(Math.random() * 36))
+    ).join('');
+
 
     if (isMockMode()) {
       console.log('⚡ Mock Mode: Creating job in-memory');
