@@ -6,20 +6,16 @@ import {
   Calendar, FileText, Mail, Clock, Send, CheckCheck, XCircle,
 } from 'lucide-react';
 
-import { useParams, useNavigate } from 'react-router-dom';
-
 const STATUS_KEY = 'vyorai:admin:statuses';
 
-export default function SessionCandidatesPage() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const selectedJobId = id;
+export default function AdminDashboard() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [candidates, setCandidates] = useState([]);
+  const [selectedJobId, setSelectedJobId] = useState('all');
   const [showNewJobModal, setShowNewJobModal] = useState(false);
-  const [newJob, setNewJob] = useState({ 
-    title: '', 
+  const [newJob, setNewJob] = useState({
+    title: '',
     description: '',
     difficulty: 'intermediate',
     interviewType: 'technical',
@@ -98,7 +94,7 @@ export default function SessionCandidatesPage() {
         flat = data.map((c) => ({ ...c, _jobTitle: job?.title }));
       }
       setCandidates(flat);
-      
+
       // Sync DB status to local state if missing
       setStatuses(prev => {
         const up = { ...prev };
@@ -125,9 +121,9 @@ export default function SessionCandidatesPage() {
       // Open the candidate portal in a new window as requested
       const joinUrl = window.location.origin + '/candidate';
       window.open(joinUrl, '_blank');
-      
-      setNewJob({ 
-        title: '', 
+
+      setNewJob({
+        title: '',
         description: '',
         difficulty: 'intermediate',
         interviewType: 'technical',
@@ -142,15 +138,13 @@ export default function SessionCandidatesPage() {
     }
   };
 
-  const getStatus = (id) => statuses[id]; // 'shortlisted' | 'deleted' | undefined
+  const getStatus = (id) => statuses[id]; // 'deleted' | undefined
 
   const setStatus = async (id, next) => {
     try {
-      // Opt-out of calling API if deleting local status (wait, if rejecting to 'deleted', backend needs status)
-      // Send standard 'pending', 'shortlisted', 'deleted'
       const backendStatus = next || 'pending';
       await updateCandidateStatus(id, backendStatus);
-      
+
       setStatuses((prev) => {
         const copy = { ...prev };
         if (!next) delete copy[id];
@@ -161,88 +155,9 @@ export default function SessionCandidatesPage() {
       console.error('Failed to update status:', err);
       alert('Failed to update candidate status.');
     }
-    setOpenMenuId(null);
   };
 
-  // ─── Email helper ───
-  const [emailSending, setEmailSending] = useState({});
-  const [emailSent, setEmailSent] = useState({});
 
-  const handleSendEmail = async (candidate, type) => {
-    const email = candidate.candidateId?.email;
-    const name = candidate.candidateId?.name || 'Candidate';
-    const jobTitle = candidate._jobTitle || '';
-    if (!email || email === '—') {
-      alert('No email address found for this candidate.');
-      return;
-    }
-    const key = `${candidate._id}_${type}`;
-    setEmailSending((p) => ({ ...p, [key]: true }));
-    try {
-      await sendCandidateEmail(email, name, jobTitle, type);
-      setEmailSent((p) => ({ ...p, [key]: true }));
-      // Auto-update status when sending email
-      if (type === 'selected' && getStatus(candidate._id) !== 'shortlisted') {
-        setStatus(candidate._id, 'shortlisted');
-      }
-      if (type === 'rejected' && getStatus(candidate._id) !== 'deleted') {
-        setStatus(candidate._id, 'deleted');
-      }
-    } catch (err) {
-      console.error('Email send failed:', err);
-      alert('Failed to send email: ' + (err.response?.data?.error || err.message));
-    } finally {
-      setEmailSending((p) => ({ ...p, [key]: false }));
-    }
-  };
-
-  const [bulkSendingType, setBulkSendingType] = useState(null);
-
-  const handleBulkEmail = async (type) => {
-    const isSelected = type === 'selected';
-    // Match current filter list, not the entire database
-    const targetCandidates = filtered.filter(c => {
-      const isShortlisted = getStatus(c._id) === 'shortlisted';
-      const email = c.candidateId?.email;
-      return (isSelected ? isShortlisted : !isShortlisted) && email && email !== '—';
-    });
-
-    if (targetCandidates.length === 0) {
-      alert(`No valid candidates to send ${isSelected ? 'Selection' : 'Rejection'} emails to in the current view.`);
-      return;
-    }
-
-    const confirmMsg = `You are about to send ${isSelected ? 'Selected' : 'Rejected'} emails to ${targetCandidates.length} candidate(s).\n\nAre you sure you want to proceed?`;
-    if (!window.confirm(confirmMsg)) return;
-
-    setBulkSendingType(type);
-    
-    const payload = targetCandidates.map(c => ({
-      email: c.candidateId.email,
-      name: c.candidateId.name || 'Candidate',
-      jobTitle: c._jobTitle || ''
-    }));
-
-    try {
-      const response = await sendBulkCandidateEmails(payload, type);
-      
-      // Auto-mark rejected as deleted for visual cleanliness
-      if (!isSelected) {
-        setStatuses(prev => {
-          const up = { ...prev };
-          targetCandidates.forEach(c => up[c._id] = 'deleted');
-          return up;
-        });
-      }
-      
-      alert(`Success! Scheduled ${targetCandidates.length} email(s) for delivery.`);
-    } catch (err) {
-      console.error('Bulk email failed:', err);
-      alert('Bulk send failed: ' + (err.response?.data?.error || err.message));
-    } finally {
-      setBulkSendingType(null);
-    }
-  };
 
   const filtered = useMemo(() => {
     const now = Date.now();
@@ -263,7 +178,6 @@ export default function SessionCandidatesPage() {
       const flags = c.tabSwitchCount || 0;
       if (filterFlags === 'flagged' && flags === 0) return false;
       if (filterFlags === 'clean' && flags > 0) return false;
-      if (filterFlags === 'shortlisted' && getStatus(c._id) !== 'shortlisted') return false;
 
       if (filterDate !== 'all' && c.createdAt) {
         const ts = new Date(c.createdAt).getTime();
@@ -336,289 +250,297 @@ export default function SessionCandidatesPage() {
       {/* Dynamic Header */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyItems: 'space-between', justifyContent: 'space-between', marginBottom: 32, padding: '32px 40px', background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', borderRadius: 24, boxShadow: '0 20px 40px -12px rgba(15,23,42,0.4)', color: 'white', flexWrap: 'wrap', gap: 20 }}>
         <div>
-            <button onClick={() => navigate('/admin')} className="btn-ghost" style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.1)', color: 'white', borderRadius: 8, marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, border: 'none', cursor: 'pointer' }}>
-               ← Back to All Sessions
+          {selectedJobId !== 'all' ? (
+            <button onClick={() => setSelectedJobId('all')} className="btn-ghost" style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.1)', color: 'white', borderRadius: 8, marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, border: 'none', cursor: 'pointer' }}>
+              ← Back to All Sessions
             </button>
+          ) : (
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#818CF8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Manage Roles</p>
+          )}
           <h1 style={{ fontSize: 32, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
-            {jobs.find(j => j._id === selectedJobId)?.title || 'Session Candidates'}
+            {selectedJobId !== 'all' ? (jobs.find(j => j._id === selectedJobId)?.title || 'Session Candidates') : 'Interview Sessions'}
           </h1>
           <p style={{ marginTop: 8, fontSize: 15, color: '#94A3B8', fontWeight: 500 }}>
-            Review, shortlist, and dispatch decision emails for this specific session.
+            {selectedJobId !== 'all' ? 'Review, shortlist, and dispatch decision emails for this specific session.' : 'Manage your interview sessions and navigate to candidate lists.'}
           </p>
         </div>
-      </div>
-
-      {/* CANDIDATES VIEW */}
-      <>
-
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 32 }}>
-        <Stat label="Candidates" value={stats.total} icon={<Users size={16} />} tone="indigo" />
-        <Stat label="Strong performers" value={stats.strong} icon={<TrendingUp size={16} />} tone="emerald" />
-        <Stat label="Flagged" value={stats.flagged} icon={<AlertTriangle size={16} />} tone="rose" />
-        <Stat label="Average score" value={`${stats.avg}/10`} icon={<CheckCircle2 size={16} />} tone="slate" />
-      </div>
-
-      {/* Filters bar */}
-      <div style={{ padding: '8px 20px', marginBottom: 24, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', background: '#FFFFFF', borderRadius: 999, border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-        <div style={{ position: 'relative', flex: '1 1 240px', minWidth: 220 }}>
-          <Search size={16} strokeWidth={2.5} style={{ position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search candidates…"
-            style={{ width: '100%', padding: '10px 16px 10px 32px', border: 'none', background: 'transparent', fontSize: 15, fontWeight: 500, color: '#0F172A', outline: 'none' }}
-          />
-        </div>
-        <div style={{ width: 1, height: 24, background: '#E2E8F0', margin: '0 4px' }} />
-        {/* Session Dropdown is removed since candidates view is locked to one session */}
-        <Select value={filterScore} onChange={setFilterScore} label="Score">
-          <option value="all">All scores</option>
-          <option value="high">Strong (7+)</option>
-          <option value="mid">Average (4–6)</option>
-          <option value="low">Weak (&lt;4)</option>
-        </Select>
-        <Select value={filterFlags} onChange={setFilterFlags} label="Status">
-          <option value="all">All candidates</option>
-          <option value="flagged">Flagged only</option>
-          <option value="clean">No flags</option>
-          <option value="shortlisted">Shortlisted</option>
-        </Select>
-        <Select value={filterDate} onChange={setFilterDate} label="Date">
-          <option value="all">Any time</option>
-          <option value="today">Last 24 hours</option>
-          <option value="week">Last 7 days</option>
-          <option value="month">Last 30 days</option>
-        </Select>
-        {activeFilterCount > 0 && (
-          <button onClick={resetFilters} style={{ padding: '8px 16px', background: '#FEF2F2', color: '#DC2626', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#FEE2E2'} onMouseOut={e => e.currentTarget.style.background = '#FEF2F2'}>
-            <RotateCcw size={14} strokeWidth={2.5} /> Reset
+        {selectedJobId === 'all' && (
+          <button onClick={() => setShowNewJobModal(true)} style={{ height: 44, padding: '0 24px', background: '#6366F1', color: 'white', borderRadius: 12, fontWeight: 700, fontSize: 14, border: 'none', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', boxShadow: '0 8px 16px -4px rgba(99,102,241,0.5)', transition: 'all 0.2s' }} onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 20px -4px rgba(99,102,241,0.6)'; }} onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 8px 16px -4px rgba(99,102,241,0.5)'; }}>
+            <Plus size={18} strokeWidth={2.5} /> Create Session
           </button>
         )}
       </div>
 
-      {/* Results count & Bulk Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 12 }}>
-        <p style={{ fontSize: 13, color: '#64748B' }}>
-          {filtered.length} of {stats.total} candidate{stats.total !== 1 ? 's' : ''}
-          {activeFilterCount > 0 && <span style={{ marginLeft: 6, color: '#4F46E5' }}>· {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active</span>}
-        </p>
-        
-        {/* Bulk Action Buttons */}
-        {filtered.length > 0 && (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={() => handleBulkEmail('selected')}
-              disabled={bulkSendingType !== null}
-              className="btn-primary"
-              style={{
-                background: 'linear-gradient(135deg, #059669, #10B981)',
-                padding: '6px 14px', fontSize: 13, border: 'none', borderRadius: 8,
-                opacity: bulkSendingType !== null ? 0.6 : 1, transition: 'all 0.2s'
-              }}
-            >
-              <CheckCheck size={14} style={{ marginRight: 6 }} />
-              {bulkSendingType === 'selected' ? 'Sending...' : 'Bulk Email: Selected'}
-            </button>
-            <button
-              onClick={() => handleBulkEmail('rejected')}
-              disabled={bulkSendingType !== null}
-              className="btn-secondary"
-              style={{
-                color: '#BE123C', borderColor: '#FECDD3', background: '#FFF1F2',
-                padding: '6px 14px', fontSize: 13, borderRadius: 8,
-                opacity: bulkSendingType !== null ? 0.6 : 1, transition: 'all 0.2s'
-              }}
-            >
-               <XCircle size={14} style={{ marginRight: 6 }} />
-              {bulkSendingType === 'rejected' ? 'Sending...' : 'Bulk Email: Rejected'}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Table */}
-      <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: '8px', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)' }}>
-        <div style={{ overflow: 'hidden', borderRadius: 16 }}>
-          {loading ? (
-            <div style={{ padding: 24 }}>
-              {[1, 2, 3, 4].map((i) => <div key={i} className="skeleton" style={{ height: 48, marginBottom: 8 }} />)}
-            </div>
-          ) : filtered.length === 0 ? (
-            <div style={{ padding: '80px 20px', textAlign: 'center', background: '#F8FAFC', borderRadius: 16 }}>
-              <div style={{ width: 80, height: 80, margin: '0 auto 20px', background: '#FFFFFF', borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 20px -5px rgba(0,0,0,0.05)' }}>
-                 <Briefcase size={36} color="#94A3B8" />
-              </div>
-              <p style={{ fontSize: 18, fontWeight: 700, color: '#0F172A' }}>No candidates to show</p>
-              <p style={{ marginTop: 8, fontSize: 14, color: '#64748B', maxWidth: 300, margin: '8px auto 0' }}>
-                {activeFilterCount > 0 ? 'Try adjusting or resetting your filters to find candidates.' : 'No candidates have applied to this session yet.'}
-              </p>
-            </div>
-          ) : (
-          <div style={{ overflowX: 'auto', overflowY: 'visible' }}>
+      {selectedJobId === 'all' ? (
+        /* SESSIONS VIEW */
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: '8px', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)' }}>
+          <div style={{ overflow: 'hidden', borderRadius: 16 }}>
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Candidate</th>
-                  <th>Code</th>
-                  <th>Time taken</th>
-                  <th>Flags</th>
-                  <th>Review</th>
-                  <th>Score</th>
+                  <th>Session Title</th>
+                  <th>Join Code</th>
+                  <th>Difficulty</th>
+                  <th>Created</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((c) => {
-                  const name = c.candidateId?.name || 'Unknown';
-                  const email = c.candidateId?.email || '—';
-                  const initials = name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
-                  const score = c.score || 0;
-                  const flags = c.tabSwitchCount || 0;
-                  const scoreTone = score >= 7 ? 'emerald' : score >= 4 ? 'amber' : 'rose';
-                  const durSec = c.testDurationSeconds || 0;
-                  const shortlisted = getStatus(c._id) === 'shortlisted';
-
-                  return (
-                    <tr
-                      key={c._id}
-                      style={{
-                        background: shortlisted ? '#ECFDF5' : undefined,
-                        borderLeft: shortlisted ? '3px solid #10B981' : '3px solid transparent',
-                      }}
-                    >
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{
-                            width: 32, height: 32, borderRadius: 999,
-                            background: shortlisted ? '#D1FAE5' : '#EEF2FF',
-                            color: shortlisted ? '#047857' : '#4338CA',
-                            display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600,
-                          }}>
-                            {initials || '?'}
-                          </div>
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <p style={{ fontSize: 13, fontWeight: 600, color: '#0F172A' }}>{name}</p>
-                              {shortlisted && (
-                                <span className="status-pill pill-emerald" style={{ padding: '2px 8px' }}>
-                                  <Star size={10} style={{ marginRight: 3 }} fill="#047857" color="#047857" />
-                                  Shortlisted
-                                </span>
-                              )}
-                            </div>
-                            <p style={{ fontSize: 12, color: '#64748B' }}>{email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span style={{ 
-                          fontFamily: 'ui-monospace, monospace', 
-                          fontSize: 12, 
-                          fontWeight: 600,
-                          padding: '4px 8px',
-                          background: '#F1F5F9',
-                          borderRadius: 4,
-                          color: '#475569'
-                        }}>
-                          {jobs.find(j => j._id === c.jobId)?.interviewCode || '—'}
-                        </span>
-                      </td>
-                      <td>
-                        <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 13, color: '#334155' }}>
-                          {Math.floor(durSec / 60)}m {durSec % 60}s
-                        </span>
-                      </td>
-                      <td>
-                        {flags > 0 ? (
-                          <span className="status-pill pill-rose">
-                            <AlertTriangle size={11} style={{ marginRight: 4 }} />
-                            {flags} flag{flags !== 1 ? 's' : ''}
-                          </span>
-                        ) : (
-                          <span className="status-pill pill-emerald">Clean</span>
-                        )}
-                      </td>
-                      <td>
-                        {c.feedback ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            <div style={{ display: 'flex', gap: 1 }}>
-                              {[1, 2, 3, 4, 5].map(s => (
-                                <Star 
-                                  key={s} 
-                                  size={10} 
-                                  fill={s <= c.feedback.rating ? '#F59E0B' : 'transparent'} 
-                                  color={s <= c.feedback.rating ? '#F59E0B' : '#CBD5E1'} 
-                                />
-                              ))}
-                            </div>
-                            {c.feedback.comment && <p style={{ fontSize: 10, color: '#64748B', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.feedback.comment}</p>}
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: 11, color: '#94A3B8' }}>No review</span>
-                        )}
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{ width: 56, height: 6, background: '#F1F5F9', borderRadius: 999, overflow: 'hidden' }}>
-                            <div
-                              style={{
-                                height: '100%',
-                                width: `${(score / 10) * 100}%`,
-                                background: scoreTone === 'emerald' ? '#10B981' : scoreTone === 'amber' ? '#F59E0B' : '#F43F5E',
-                              }}
-                            />
-                          </div>
-                          <span style={{
-                            fontSize: 13, fontWeight: 600,
-                            color: scoreTone === 'emerald' ? '#047857' : scoreTone === 'amber' ? '#B45309' : '#BE123C',
-                          }}>
-                            {score}/10
-                          </span>
-                        </div>
-                      </td>
-                      <td style={{ textAlign: 'right', position: 'relative' }}>
-                        <div style={{ display: 'inline-flex', gap: 2, position: 'relative' }}>
-                          <IconAction title="View report" onClick={() => setViewing(c)}>
-                            <Eye size={14} />
-                          </IconAction>
-                          <IconAction title="Download JSON" onClick={() => downloadReport(c)}>
-                            <Download size={14} />
-                          </IconAction>
-                          <div style={{ position: 'relative' }} ref={openMenuId === c._id ? menuRef : null}>
-                            <IconAction
-                              title="More"
-                              onClick={() => setOpenMenuId(openMenuId === c._id ? null : c._id)}
-                              active={openMenuId === c._id}
-                            >
-                              <MoreHorizontal size={14} />
-                            </IconAction>
-                            {openMenuId === c._id && (
-                              <Dropdown
-                                onShortlist={() => setStatus(c._id, shortlisted ? null : 'shortlisted')}
-                                onDelete={() => setStatus(c._id, 'deleted')}
-                                shortlisted={shortlisted}
-                                onSendSelected={() => handleSendEmail(c, 'selected')}
-                                onSendRejected={() => handleSendEmail(c, 'rejected')}
-                                emailSending={emailSending[`${c._id}_selected`] || emailSending[`${c._id}_rejected`]}
-                                emailSent={emailSent}
-                                candidateId={c._id}
-                              />
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {jobs.map(job => (
+                  <tr key={job._id}>
+                    <td><span style={{ fontWeight: 600, color: '#0F172A' }}>{job.title}</span></td>
+                    <td><span className="status-pill pill-indigo" style={{ fontFamily: 'monospace' }}>{job.interviewCode}</span></td>
+                    <td>{job.difficulty}</td>
+                    <td style={{ color: '#64748B' }}>{new Date(job.createdAt).toLocaleDateString()}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button onClick={() => setSelectedJobId(job._id)} className="btn-primary" style={{ padding: '6px 16px', fontSize: 13, borderRadius: 8, border: 'none', background: '#4F46E5', color: 'white', cursor: 'pointer' }}>
+                        View Candidates
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {jobs.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan="5" style={{ textAlign: 'center', padding: '40px 20px', color: '#64748B' }}>
+                      No interview sessions created yet. Click "Create Session" to begin.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
-        )}
         </div>
-      </div>
-      </>
+      ) : (
+        /* CANDIDATES VIEW */
+        <>
+
+          {/* Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 32 }}>
+            <Stat label="Candidates" value={stats.total} icon={<Users size={16} />} tone="indigo" />
+            <Stat label="Strong performers" value={stats.strong} icon={<TrendingUp size={16} />} tone="emerald" />
+            <Stat label="Flagged" value={stats.flagged} icon={<AlertTriangle size={16} />} tone="rose" />
+            <Stat label="Average score" value={`${stats.avg}/10`} icon={<CheckCircle2 size={16} />} tone="slate" />
+          </div>
+
+          {/* Filters bar */}
+          <div style={{ padding: '8px 20px', marginBottom: 24, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', background: '#FFFFFF', borderRadius: 999, border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+            <div style={{ position: 'relative', flex: '1 1 240px', minWidth: 220 }}>
+              <Search size={16} strokeWidth={2.5} style={{ position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search candidates…"
+                style={{ width: '100%', padding: '10px 16px 10px 32px', border: 'none', background: 'transparent', fontSize: 15, fontWeight: 500, color: '#0F172A', outline: 'none' }}
+              />
+            </div>
+            <div style={{ width: 1, height: 24, background: '#E2E8F0', margin: '0 4px' }} />
+            {/* Session Dropdown is removed since candidates view is locked to one session */}
+            <Select value={filterScore} onChange={setFilterScore} label="Score">
+              <option value="all">All scores</option>
+              <option value="high">Strong (7+)</option>
+              <option value="mid">Average (4–6)</option>
+              <option value="low">Weak (&lt;4)</option>
+            </Select>
+            <Select value={filterFlags} onChange={setFilterFlags} label="Status">
+              <option value="all">All candidates</option>
+              <option value="flagged">Flagged only</option>
+              <option value="clean">No flags</option>
+              <option value="shortlisted">Shortlisted</option>
+            </Select>
+            <Select value={filterDate} onChange={setFilterDate} label="Date">
+              <option value="all">Any time</option>
+              <option value="today">Last 24 hours</option>
+              <option value="week">Last 7 days</option>
+              <option value="month">Last 30 days</option>
+            </Select>
+            {activeFilterCount > 0 && (
+              <button onClick={resetFilters} style={{ padding: '8px 16px', background: '#FEF2F2', color: '#DC2626', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#FEE2E2'} onMouseOut={e => e.currentTarget.style.background = '#FEF2F2'}>
+                <RotateCcw size={14} strokeWidth={2.5} /> Reset
+              </button>
+            )}
+          </div>
+
+          {/* Results count & Bulk Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 12 }}>
+            <p style={{ fontSize: 13, color: '#64748B' }}>
+              {filtered.length} of {stats.total} candidate{stats.total !== 1 ? 's' : ''}
+              {activeFilterCount > 0 && <span style={{ marginLeft: 6, color: '#4F46E5' }}>· {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active</span>}
+            </p>
+
+            {/* Bulk Action Buttons */}
+
+          </div>
+
+          {/* Table */}
+          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: '8px', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)' }}>
+            <div style={{ overflow: 'hidden', borderRadius: 16 }}>
+              {loading ? (
+                <div style={{ padding: 24 }}>
+                  {[1, 2, 3, 4].map((i) => <div key={i} className="skeleton" style={{ height: 48, marginBottom: 8 }} />)}
+                </div>
+              ) : filtered.length === 0 ? (
+                <div style={{ padding: '80px 20px', textAlign: 'center', background: '#F8FAFC', borderRadius: 16 }}>
+                  <div style={{ width: 80, height: 80, margin: '0 auto 20px', background: '#FFFFFF', borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 20px -5px rgba(0,0,0,0.05)' }}>
+                    <Briefcase size={36} color="#94A3B8" />
+                  </div>
+                  <p style={{ fontSize: 18, fontWeight: 700, color: '#0F172A' }}>No candidates to show</p>
+                  <p style={{ marginTop: 8, fontSize: 14, color: '#64748B', maxWidth: 300, margin: '8px auto 0' }}>
+                    {activeFilterCount > 0 ? 'Try adjusting or resetting your filters to find candidates.' : 'No candidates have applied to this session yet.'}
+                  </p>
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto', overflowY: 'visible' }}>
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Candidate</th>
+                        <th>Code</th>
+                        <th>Time taken</th>
+                        <th>Flags</th>
+                        <th>Review</th>
+                        <th>Score</th>
+                        <th style={{ textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((c) => {
+                        const name = c.candidateId?.name || 'Unknown';
+                        const email = c.candidateId?.email || '—';
+                        const initials = name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
+                        const score = c.score || 0;
+                        const flags = c.tabSwitchCount || 0;
+                        const scoreTone = score >= 7 ? 'emerald' : score >= 4 ? 'amber' : 'rose';
+                        const durSec = c.testDurationSeconds || 0;
+                        const shortlisted = getStatus(c._id) === 'shortlisted';
+
+                        return (
+                          <tr
+                            key={c._id}
+                            style={{
+                              borderLeft: '3px solid transparent',
+                            }}
+                          >
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div style={{
+                                  width: 32, height: 32, borderRadius: 999,
+                                  background: '#EEF2FF',
+                                  color: '#4338CA',
+                                  display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600,
+                                }}>
+                                  {initials || '?'}
+                                </div>
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <p style={{ fontSize: 13, fontWeight: 600, color: '#0F172A' }}>{name}</p>
+                                  </div>
+                                  <p style={{ fontSize: 12, color: '#64748B' }}>{email}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <span style={{
+                                fontFamily: 'ui-monospace, monospace',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                padding: '4px 8px',
+                                background: '#F1F5F9',
+                                borderRadius: 4,
+                                color: '#475569'
+                              }}>
+                                {jobs.find(j => j._id === c.jobId)?.interviewCode || '—'}
+                              </span>
+                            </td>
+                            <td>
+                              <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 13, color: '#334155' }}>
+                                {Math.floor(durSec / 60)}m {durSec % 60}s
+                              </span>
+                            </td>
+                            <td>
+                              {flags > 0 ? (
+                                <span className="status-pill pill-rose">
+                                  <AlertTriangle size={11} style={{ marginRight: 4 }} />
+                                  {flags} flag{flags !== 1 ? 's' : ''}
+                                </span>
+                              ) : (
+                                <span className="status-pill pill-emerald">Clean</span>
+                              )}
+                            </td>
+                            <td>
+                              {c.feedback ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                  <div style={{ display: 'flex', gap: 1 }}>
+                                    {[1, 2, 3, 4, 5].map(s => (
+                                      <Star
+                                        key={s}
+                                        size={10}
+                                        fill={s <= c.feedback.rating ? '#F59E0B' : 'transparent'}
+                                        color={s <= c.feedback.rating ? '#F59E0B' : '#CBD5E1'}
+                                      />
+                                    ))}
+                                  </div>
+                                  {c.feedback.comment && <p style={{ fontSize: 10, color: '#64748B', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.feedback.comment}</p>}
+                                </div>
+                              ) : (
+                                <span style={{ fontSize: 11, color: '#94A3B8' }}>No review</span>
+                              )}
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <div style={{ width: 56, height: 6, background: '#F1F5F9', borderRadius: 999, overflow: 'hidden' }}>
+                                  <div
+                                    style={{
+                                      height: '100%',
+                                      width: `${(score / 10) * 100}%`,
+                                      background: scoreTone === 'emerald' ? '#10B981' : scoreTone === 'amber' ? '#F59E0B' : '#F43F5E',
+                                    }}
+                                  />
+                                </div>
+                                <span style={{
+                                  fontSize: 13, fontWeight: 600,
+                                  color: scoreTone === 'emerald' ? '#047857' : scoreTone === 'amber' ? '#B45309' : '#BE123C',
+                                }}>
+                                  {score}/10
+                                </span>
+                              </div>
+                            </td>
+                            <td style={{ textAlign: 'right', position: 'relative' }}>
+                              <div style={{ display: 'inline-flex', gap: 2, position: 'relative' }}>
+                                <IconAction title="View report" onClick={() => setViewing(c)}>
+                                  <Eye size={14} />
+                                </IconAction>
+                                <IconAction title="Download JSON" onClick={() => downloadReport(c)}>
+                                  <Download size={14} />
+                                </IconAction>
+                                <div style={{ position: 'relative' }} ref={openMenuId === c._id ? menuRef : null}>
+                                  <IconAction
+                                    title="More"
+                                    onClick={() => setOpenMenuId(openMenuId === c._id ? null : c._id)}
+                                    active={openMenuId === c._id}
+                                  >
+                                    <MoreHorizontal size={14} />
+                                  </IconAction>
+                                  {openMenuId === c._id && (
+                                    <Dropdown
+                                      onDelete={() => setStatus(c._id, 'deleted')}
+                                      candidateId={c._id}
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* View candidate modal */}
       {viewing && (
@@ -626,16 +548,11 @@ export default function SessionCandidatesPage() {
           candidate={viewing}
           status={getStatus(viewing._id)}
           onClose={() => setViewing(null)}
-          onShortlist={() => setStatus(viewing._id, getStatus(viewing._id) === 'shortlisted' ? null : 'shortlisted')}
           onDelete={() => {
             setStatus(viewing._id, 'deleted');
             setViewing(null);
           }}
           onDownload={() => downloadReport(viewing)}
-          onSendSelected={() => handleSendEmail(viewing, 'selected')}
-          onSendRejected={() => handleSendEmail(viewing, 'rejected')}
-          emailSending={emailSending}
-          emailSent={emailSent}
         />
       )}
 
@@ -668,13 +585,13 @@ export default function SessionCandidatesPage() {
                   <CheckCircle2 size={32} />
                 </div>
                 <p style={{ fontSize: 14, color: '#64748B', marginBottom: 8 }}>Candidate Join Code</p>
-                <div style={{ 
-                  fontSize: 42, 
-                  fontWeight: 900, 
-                  color: '#4F46E5', 
-                  letterSpacing: '0.1em', 
-                  background: '#F8FAFC', 
-                  padding: '16px 24px', 
+                <div style={{
+                  fontSize: 42,
+                  fontWeight: 900,
+                  color: '#4F46E5',
+                  letterSpacing: '0.1em',
+                  background: '#F8FAFC',
+                  padding: '16px 24px',
                   borderRadius: 16,
                   border: '1px dashed #6366F1',
                   display: 'inline-block',
@@ -682,14 +599,14 @@ export default function SessionCandidatesPage() {
                 }}>
                   {latestJob.interviewCode}
                 </div>
-                <button 
+                <button
                   onClick={() => window.open(window.location.origin + '/candidate', '_blank')}
                   className="btn-secondary"
                   style={{ width: '100%', marginTop: 24, height: 44, borderColor: '#6366F1', color: '#4F46E5', fontWeight: 700 }}
                 >
                   Open Interview Portal
                 </button>
-                <button 
+                <button
                   onClick={() => { setShowNewJobModal(false); setLatestJob(null); }}
                   className="btn-primary"
                   style={{ width: '100%', marginTop: 12, height: 44 }}
@@ -808,7 +725,7 @@ function Select({ value, onChange, children, label }) {
       onChange={(e) => onChange(e.target.value)}
       aria-label={label}
       style={{
-        width: 'auto', minWidth: 140, cursor: 'pointer', padding: '10px 36px 10px 18px', background: hasValue ? '#EFF6FF' : 'transparent', color: hasValue ? '#4F46E5' : '#475569', fontWeight: 600, fontSize: 14, border: `2px solid ${hasValue ? '#4F46E5' : 'transparent'}`, borderRadius: 999, outline: 'none', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='${hasValue? '%234F46E5': '%2364748b'}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 5l3 3 3-3'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', transition: 'all 0.2s'
+        width: 'auto', minWidth: 140, cursor: 'pointer', padding: '10px 36px 10px 18px', background: hasValue ? '#EFF6FF' : 'transparent', color: hasValue ? '#4F46E5' : '#475569', fontWeight: 600, fontSize: 14, border: `2px solid ${hasValue ? '#4F46E5' : 'transparent'}`, borderRadius: 999, outline: 'none', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='${hasValue ? '%234F46E5' : '%2364748b'}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 5l3 3 3-3'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', transition: 'all 0.2s'
       }}
       onMouseOver={e => !hasValue && (e.currentTarget.style.background = '#F8FAFC')}
       onMouseOut={e => !hasValue && (e.currentTarget.style.background = 'transparent')}
@@ -836,39 +753,13 @@ function IconAction({ title, children, onClick, active }) {
   );
 }
 
-function Dropdown({ onShortlist, onDelete, shortlisted, onSendSelected, onSendRejected, emailSending, emailSent, candidateId }) {
-  const selectedSent = emailSent?.[`${candidateId}_selected`];
-  const rejectedSent = emailSent?.[`${candidateId}_rejected`];
+function Dropdown({ onDelete, candidateId }) {
   return (
-    <div
-      role="menu"
-      style={{
-        position: 'absolute',
-        right: 0,
-        top: 'calc(100% + 6px)',
-        minWidth: 220,
-        background: '#FFFFFF',
-        border: '1px solid #E2E8F0',
-        borderRadius: 8,
-        boxShadow: '0 10px 30px rgba(15,23,42,0.12)',
-        padding: 4,
-        zIndex: 30,
-      }}
-    >
-      <DropdownItem onClick={onShortlist} tone={shortlisted ? 'slate' : 'emerald'}>
-        {shortlisted ? <StarOff size={14} /> : <Star size={14} />}
-        {shortlisted ? 'Remove shortlist' : 'Keep / Shortlist'}
-      </DropdownItem>
-      <div style={{ height: 1, background: '#F1F5F9', margin: '4px 0' }} />
-      <DropdownItem onClick={!emailSending && !selectedSent ? onSendSelected : undefined} tone="emerald">
-        {selectedSent ? <CheckCheck size={14} /> : <Send size={14} />}
-        {emailSending ? 'Sending…' : selectedSent ? 'Selected mail sent ✓' : 'Send Selected Email'}
-      </DropdownItem>
-      <DropdownItem onClick={!emailSending && !rejectedSent ? onSendRejected : undefined} tone="rose">
-        {rejectedSent ? <CheckCheck size={14} /> : <XCircle size={14} />}
-        {emailSending ? 'Sending…' : rejectedSent ? 'Rejected mail sent ✓' : 'Send Rejected Email'}
-      </DropdownItem>
-      <div style={{ height: 1, background: '#F1F5F9', margin: '4px 0' }} />
+    <div style={{
+      position: 'absolute', right: 0, top: '100%', marginTop: 8, width: 220,
+      background: '#FFFFFF', borderRadius: 12, boxShadow: '0 10px 30px -5px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
+      padding: 6, zIndex: 50, border: '1px solid #E2E8F0'
+    }}>
       <DropdownItem onClick={onDelete} tone="rose">
         <Trash2 size={14} />
         Delete candidate
@@ -912,7 +803,7 @@ function DropdownItem({ children, onClick, tone }) {
   );
 }
 
-function ViewCandidateModal({ candidate: c, status, onClose, onShortlist, onDelete, onDownload, onSendSelected, onSendRejected, emailSending, emailSent }) {
+function ViewCandidateModal({ candidate: c, status, onClose, onDelete, onDownload }) {
   const name = c.candidateId?.name || 'Unknown';
   const email = c.candidateId?.email || '—';
   const score = c.score || 0;
@@ -921,12 +812,6 @@ function ViewCandidateModal({ candidate: c, status, onClose, onShortlist, onDele
   const total = c.questions?.length || 0;
   const correct = (c.questions || []).filter((q) => (c.answers || {})[q.id] === q.correctAnswer).length;
   const accuracy = total ? Math.round((correct / total) * 100) : 0;
-  const shortlisted = status === 'shortlisted';
-
-  const selectedSending = emailSending?.[`${c._id}_selected`];
-  const rejectedSending = emailSending?.[`${c._id}_rejected`];
-  const selectedDone = emailSent?.[`${c._id}_selected`];
-  const rejectedDone = emailSent?.[`${c._id}_rejected`];
 
   return (
     <div
@@ -947,8 +832,8 @@ function ViewCandidateModal({ candidate: c, status, onClose, onShortlist, onDele
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <div style={{
               width: 44, height: 44, borderRadius: 999,
-              background: shortlisted ? '#D1FAE5' : '#EEF2FF',
-              color: shortlisted ? '#047857' : '#4338CA',
+              background: '#EEF2FF',
+              color: '#4338CA',
               display: 'grid', placeItems: 'center',
               fontSize: 14, fontWeight: 600,
             }}>
@@ -957,12 +842,6 @@ function ViewCandidateModal({ candidate: c, status, onClose, onShortlist, onDele
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <h2 style={{ fontSize: 17, fontWeight: 600, color: '#0F172A' }}>{name}</h2>
-                {shortlisted && (
-                  <span className="status-pill pill-emerald">
-                    <Star size={10} fill="#047857" color="#047857" style={{ marginRight: 3 }} />
-                    Shortlisted
-                  </span>
-                )}
               </div>
               <p style={{ marginTop: 2, fontSize: 12, color: '#64748B' }}>{c._jobTitle || '—'}</p>
             </div>
@@ -988,11 +867,11 @@ function ViewCandidateModal({ candidate: c, status, onClose, onShortlist, onDele
               </p>
               <div style={{ display: 'flex', gap: 2, marginBottom: 8 }}>
                 {[1, 2, 3, 4, 5].map(s => (
-                  <Star 
-                    key={s} 
-                    size={16} 
-                    fill={s <= c.feedback.rating ? '#F59E0B' : 'transparent'} 
-                    color={s <= c.feedback.rating ? '#F59E0B' : '#CBD5E1'} 
+                  <Star
+                    key={s}
+                    size={16}
+                    fill={s <= c.feedback.rating ? '#F59E0B' : 'transparent'}
+                    color={s <= c.feedback.rating ? '#F59E0B' : '#CBD5E1'}
                   />
                 ))}
               </div>
@@ -1135,13 +1014,6 @@ function ViewCandidateModal({ candidate: c, status, onClose, onShortlist, onDele
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={onDownload} className="btn-secondary">
               <Download size={14} /> Download
-            </button>
-            <button
-              onClick={onShortlist}
-              className="btn-primary"
-              style={shortlisted ? { background: '#059669' } : undefined}
-            >
-              {shortlisted ? <><StarOff size={14} /> Remove shortlist</> : <><Star size={14} /> Keep / Shortlist</>}
             </button>
           </div>
         </div>

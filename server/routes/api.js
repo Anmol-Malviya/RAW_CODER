@@ -9,7 +9,10 @@ import { getQuestions, createQuestion, deleteQuestion } from '../controllers/que
 import { getDashboardAnalytics } from '../controllers/analyticsController.js';
 import { getSettings, updateSetting } from '../controllers/settingController.js';
 import { sendCandidateEmail, sendBulkEmails } from '../controllers/emailController.js';
-
+import {
+  getSessions, getSessionCandidates,
+  updateCandidateStatus as updateWSStatus, sendShortlistedEmails, sendRejectionEmails
+} from '../controllers/workspaceController.js';
 
 const router = Router();
 
@@ -59,6 +62,13 @@ router.post('/settings', requireAuth, requireAdmin, updateSetting);
 // Email Routes
 router.post('/email/send', requireAuth, requireAdmin, sendCandidateEmail);
 router.post('/email/bulk-send', requireAuth, requireAdmin, sendBulkEmails);
+
+// Workspace (Interview Candidate Management) Routes
+router.get('/sessions', requireAuth, requireAdmin, getSessions);
+router.get('/sessions/:id/candidates', requireAuth, requireAdmin, getSessionCandidates);
+router.patch('/candidates/:id/status', requireAuth, requireAdmin, updateWSStatus);
+router.post('/sessions/:id/send-shortlisted-emails', requireAuth, requireAdmin, sendShortlistedEmails);
+router.post('/sessions/:id/send-rejection-emails', requireAuth, requireAdmin, sendRejectionEmails);
 
 // Health check
 router.get('/health', (req, res) => {

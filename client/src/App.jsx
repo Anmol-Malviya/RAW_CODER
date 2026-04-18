@@ -23,6 +23,8 @@ import AdminSessionsPage from './pages/AdminSessionsPage';
 import JobManagementPage from './pages/JobManagementPage';
 import CandidateATSChecker from './pages/CandidateATSChecker';
 import SessionCandidatesPage from './pages/SessionCandidatesPage';
+import WorkspaceDashboard from './pages/WorkspaceDashboard';
+import WorkspaceSessionDetail from './pages/WorkspaceSessionDetail';
 
 function ProtectedRoute({ children, role }) {
   const { user } = useAuth();
@@ -70,13 +72,16 @@ function AppRoutes() {
 
       <Route element={<ProtectedRoute role="admin"><AuthenticatedLayout /></ProtectedRoute>}>
         <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/candidates/:id" element={<SessionCandidatesPage />} />
         <Route path="/admin/roles" element={<JobManagementPage />} />
         <Route path="/admin/live" element={<AdminLiveMonitor />} />
         <Route path="/admin/questions" element={<QuestionBankPage />} />
         <Route path="/admin/sessions" element={<AdminSessionsPage />} />
         <Route path="/admin/analytics" element={<AnalyticsPage />} />
         <Route path="/admin/settings" element={<SettingsPage />} />
+        
+        {/* New Admin Workspace */}
+        <Route path="/admin/workspace" element={<WorkspaceDashboard />} />
+        <Route path="/admin/workspace/session/:id" element={<WorkspaceSessionDetail />} />
       </Route>
     </Routes>
   );

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Settings, Video, BarChart3, Database, BookOpen, User, HelpCircle, LogOut, Briefcase, ChevronDown, FileText } from 'lucide-react';
+import { LayoutDashboard, Settings, Video, BarChart3, Database, BookOpen, User, Users, HelpCircle, LogOut, Briefcase, ChevronDown, FileText } from 'lucide-react';
 
 const candidateNav = [
   { label: 'Dashboard', href: '/candidate', icon: LayoutDashboard, match: '/candidate' },
@@ -14,6 +14,7 @@ const candidateNav = [
 
 const adminNav = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, match: '/admin', exact: true },
+  { label: 'Workspace', href: '/admin/workspace', icon: Users, match: '/admin/workspace' },
   { label: 'Manage Roles', href: '/admin/roles', icon: Briefcase, match: '/admin/roles' },
   { label: 'Live Monitoring', href: '/admin/live', icon: Video, match: '/admin/live' },
   { label: 'Question Bank', href: '/admin/questions', icon: Database, match: '/admin/questions' },
@@ -36,6 +37,8 @@ const titleMap = [
   { match: '/coding', title: 'Coding test' },
   { match: '/voice-interview', title: 'Voice Interview' },
   // Admin sub-routes (specific before generic)
+  { match: '/admin/workspace/session', title: 'Participants' },
+  { match: '/admin/workspace', title: 'Workspace' },
   { match: '/admin/roles', title: 'Role Management' },
   { match: '/admin/live', title: 'Live Monitoring' },
   { match: '/admin/questions', title: 'Question Bank' },
