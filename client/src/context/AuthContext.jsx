@@ -9,22 +9,37 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        // Simple check to see if token is expired
-        if (decoded.exp * 1000 < Date.now()) {
+    const initAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const decoded = jwtDecode(token);
+          // Simple check to see if token is expired
+          if (decoded.exp * 1000 < Date.now()) {
+            logout();
+          } else {
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            // Set initial state from token
+            setUser({ id: decoded.id, role: decoded.role, name: decoded.name });
+            
+            // Fetch complete profile from server
+            try {
+              const res = await api.get('/auth/profile');
+              if (res.data) {
+                setUser({ ...res.data, id: res.data._id || decoded.id });
+              }
+            } catch (profileError) {
+              console.error('Failed to fetch profile on load', profileError);
+            }
+          }
+        } catch (e) {
           logout();
-        } else {
-          setUser({ id: decoded.id, role: decoded.role });
-          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         }
-      } catch (e) {
-        logout();
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    };
+    
+    initAuth();
   }, []);
 
   const login = (token, userData) => {

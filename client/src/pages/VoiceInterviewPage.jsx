@@ -464,8 +464,13 @@ export default function VoiceInterviewPage() {
   const isLastQuestion = currentQuestion >= questions.length - 1;
 
   // ─── Guard: No session → redirect (AFTER all hooks) ───
+  useEffect(() => {
+    if (!sessionId) {
+      navigate('/candidate');
+    }
+  }, [sessionId, navigate]);
+
   if (!sessionId) {
-    navigate('/candidate');
     return null;
   }
 

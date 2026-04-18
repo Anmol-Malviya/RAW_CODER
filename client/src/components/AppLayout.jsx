@@ -3,15 +3,19 @@ import { useAuth } from '../context/AuthContext';
 import { LayoutDashboard, Settings, Video, BarChart3, Database, BookOpen, User, HelpCircle, LogOut, Settings2 } from 'lucide-react';
 
 const candidateNav = [
-  { label: 'Dashboard', href: '/candidate', icon: LayoutDashboard, match: '/candidate' },
+  { label: 'Dashboard', href: '/candidate', icon: LayoutDashboard, match: '/candidate', exact: true },
   { label: 'Practice Area', href: '/candidate/practice', icon: BookOpen, match: '/candidate/practice' },
   { label: 'My Profile', href: '/candidate/profile', icon: User, match: '/candidate/profile' },
   { label: 'Help & Support', href: '/candidate/support', icon: HelpCircle, match: '/candidate/support' },
 ];
 
 const adminNav = [
+<<<<<<< HEAD
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, match: '/admin' },
   { label: 'Manage Roles', href: '/admin/roles', icon: Settings2, match: '/admin/roles' },
+=======
+  { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, match: '/admin', exact: true },
+>>>>>>> 187117cb3176ec75e631866e4a2838400b1b90b3
   { label: 'Live Monitoring', href: '/admin/live', icon: Video, match: '/admin/live' },
   { label: 'Question Bank', href: '/admin/questions', icon: Database, match: '/admin/questions' },
   { label: 'Sessions', href: '/admin/sessions', icon: BookOpen, match: '/admin/sessions' },
@@ -60,7 +64,9 @@ export default function AppLayout() {
           <p className="sidebar-section-label">Workspace</p>
           <nav className="sidebar-nav">
             {items.map((item) => {
-              const active = location.pathname.startsWith(item.match);
+              const active = item.exact 
+                ? location.pathname === item.match || location.pathname === `${item.match}/`
+                : location.pathname.startsWith(item.match);
               const Icon = item.icon;
               return (
                 <Link
