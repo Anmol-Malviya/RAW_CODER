@@ -9,6 +9,12 @@ import JobApplyPage from './pages/JobApplyPage';
 import AssessmentPage from './pages/AssessmentPage';
 import ResultsPage from './pages/ResultsPage';
 import CodingTestPage from './pages/CodingTestPage';
+import SystemCheckPage from './pages/SystemCheckPage';
+import CandidateProfile from './pages/CandidateProfile';
+import CandidateSupport from './pages/CandidateSupport';
+import CandidatePractice from './pages/CandidatePractice';
+import AdminLiveMonitor from './pages/AdminLiveMonitor';
+import { AdminSettings, AdminAnalytics, AdminQuestions } from './pages/PlaceholderPages';
 
 function ProtectedRoute({ children, role }) {
   const { user } = useAuth();
@@ -38,14 +44,22 @@ function AppRoutes() {
 
       <Route element={<ProtectedRoute role="candidate"><AuthenticatedLayout /></ProtectedRoute>}>
         <Route path="/candidate" element={<CandidateDashboard />} />
+        <Route path="/check" element={<SystemCheckPage />} />
         <Route path="/apply/:jobId" element={<JobApplyPage />} />
         <Route path="/assessment" element={<AssessmentPage />} />
         <Route path="/results" element={<ResultsPage />} />
         <Route path="/coding" element={<CodingTestPage />} />
+        <Route path="/candidate/practice" element={<CandidatePractice />} />
+        <Route path="/candidate/profile" element={<CandidateProfile />} />
+        <Route path="/candidate/support" element={<CandidateSupport />} />
       </Route>
 
       <Route element={<ProtectedRoute role="admin"><AuthenticatedLayout /></ProtectedRoute>}>
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/live" element={<AdminLiveMonitor />} />
+        <Route path="/admin/questions" element={<AdminQuestions />} />
+        <Route path="/admin/analytics" element={<AdminAnalytics />} />
+        <Route path="/admin/settings" element={<AdminSettings />} />
       </Route>
     </Routes>
   );

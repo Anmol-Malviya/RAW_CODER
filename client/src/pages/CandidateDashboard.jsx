@@ -47,6 +47,43 @@ export default function CandidateDashboard() {
         <StatCard label="Avg. completion" value="—" />
       </div>
 
+      {/* Join with Code */}
+      <div className="panel" style={{ padding: 24, marginBottom: 32, background: 'linear-gradient(to right, #EEF2FF, #F5F3FF)', border: '1px solid #C7D2FE' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 280 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1E1B4B' }}>Join interview with code</h3>
+            <p style={{ marginTop: 2, fontSize: 13, color: '#4338CA' }}>Enter the unique code shared by your recruiter to begin.</p>
+          </div>
+          <div style={{ display: 'flex', gap: 10, flex: '1 1 300px' }}>
+            <input
+              type="text"
+              placeholder="e.g. AB12CD"
+              className="input-soft"
+              style={{ textTransform: 'uppercase', flex: 1 }}
+              maxLength={6}
+              id="interviewCode"
+            />
+            <button 
+              className="btn-primary" 
+              style={{ whiteSpace: 'nowrap' }}
+              onClick={async () => {
+                const code = document.getElementById('interviewCode').value;
+                if (!code) return alert('Please enter a code');
+                try {
+                  const data = await import('../services/api').then(m => m.validateInterviewCode(code));
+                  navigate('/check', { state: { jobData: data } });
+                } catch (err) {
+                  alert(err.response?.data?.error || 'Invalid interview code');
+                }
+              }}
+            >
+              Join Session
+              <ArrowRight size={14} />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Search */}
       <div style={{ position: 'relative', maxWidth: 420, marginBottom: 20 }}>
         <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
@@ -95,7 +132,7 @@ export default function CandidateDashboard() {
               </div>
 
               <button
-                onClick={() => navigate(`/apply/${job._id}`)}
+                onClick={() => navigate('/check', { state: { jobData: job } })}
                 className="btn-primary"
                 style={{ marginTop: 20, width: '100%' }}
               >

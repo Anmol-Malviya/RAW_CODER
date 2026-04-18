@@ -1,0 +1,149 @@
+import React, { useState } from 'react';
+import { BookOpen, Code2, BrainCircuit, Play, CheckCircle2, ChevronRight, Lock } from 'lucide-react';
+
+const mockChallenges = [
+  { id: 1, title: 'Two Sum', category: 'Algorithms', difficulty: 'Easy', status: 'completed' },
+  { id: 2, title: 'Reverse a Linked List', category: 'Data Structures', difficulty: 'Easy', status: 'completed' },
+  { id: 3, title: 'Merge Intervals', category: 'Algorithms', difficulty: 'Medium', status: 'unattempted' },
+  { id: 4, title: 'Valid Parentheses', category: 'Data Structures', difficulty: 'Easy', status: 'unattempted' },
+  { id: 5, title: 'Longest Palindromic Substring', category: 'Strings', difficulty: 'Medium', status: 'unattempted' },
+  { id: 6, title: 'LRU Cache Design', category: 'System Design', difficulty: 'Hard', status: 'locked' }
+];
+
+const getDifficultyColor = (diff) => {
+  switch(diff) {
+    case 'Easy': return { text: '#10B981', bg: '#D1FAE5' };
+    case 'Medium': return { text: '#F59E0B', bg: '#FEF3C7' };
+    case 'Hard': return { text: '#F43F5E', bg: '#FFE4E6' };
+    default: return { text: '#64748B', bg: '#F1F5F9' };
+  }
+};
+
+export default function CandidatePractice() {
+  const [activeTab, setActiveTab] = useState('coding');
+
+  return (
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 0' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #E2E8F0' }}>
+        <div style={{ width: 48, height: 48, borderRadius: 12, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3B82F6' }}>
+          <BookOpen size={24} />
+        </div>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: '#0F172A', marginBottom: 4 }}>Practice Area</h1>
+          <p style={{ color: '#64748B' }}>Sharpen your skills with mock questions before taking the real interview.</p>
+        </div>
+      </div>
+
+      {/* Stats Overview */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 32 }}>
+        <div className="card" style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 24, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B' }}>
+            <CheckCircle2 size={24} />
+          </div>
+          <div>
+            <p style={{ fontSize: 13, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Completed</p>
+            <p style={{ fontSize: 24, fontWeight: 700, color: '#0F172A' }}>2 <span style={{ fontSize: 14, color: '#94A3B8', fontWeight: 500 }}>/ 24</span></p>
+          </div>
+        </div>
+        
+        <div className="card" style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 24, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F97316' }}>
+            <BrainCircuit size={24} />
+          </div>
+          <div>
+            <p style={{ fontSize: 13, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Current Streak</p>
+            <p style={{ fontSize: 24, fontWeight: 700, color: '#0F172A' }}>3 <span style={{ fontSize: 14, color: '#94A3B8', fontWeight: 500 }}>Days</span></p>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 24, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22C55E' }}>
+            <Code2 size={24} />
+          </div>
+          <div>
+            <p style={{ fontSize: 13, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Global Rank</p>
+            <p style={{ fontSize: 24, fontWeight: 700, color: '#0F172A' }}>Top 15%</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="card" style={{ overflow: 'hidden' }}>
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
+          <button 
+            onClick={() => setActiveTab('coding')}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 24px', background: activeTab === 'coding' ? 'white' : 'transparent', border: 'none', borderBottom: activeTab === 'coding' ? '2px solid #3B82F6' : '2px solid transparent', color: activeTab === 'coding' ? '#3B82F6' : '#64748B', fontWeight: 600, cursor: 'pointer' }}
+          >
+            <Code2 size={18} /> Mock Coding Assessments
+          </button>
+          <button 
+            onClick={() => setActiveTab('mcq')}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 24px', background: activeTab === 'mcq' ? 'white' : 'transparent', border: 'none', borderBottom: activeTab === 'mcq' ? '2px solid #3B82F6' : '2px solid transparent', color: activeTab === 'mcq' ? '#3B82F6' : '#64748B', fontWeight: 600, cursor: 'pointer' }}
+          >
+            <BookOpen size={18} /> MCQ Knowledge Tests
+          </button>
+        </div>
+
+        <div style={{ padding: 0 }}>
+          {activeTab === 'coding' ? (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {mockChallenges.map((challenge, idx) => {
+                const diffColor = getDifficultyColor(challenge.difficulty);
+                const isLocked = challenge.status === 'locked';
+                const isCompleted = challenge.status === 'completed';
+                
+                return (
+                  <div key={challenge.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: idx !== mockChallenges.length - 1 ? '1px solid #E2E8F0' : 'none', background: isLocked ? '#F8FAFC' : 'white', cursor: isLocked ? 'not-allowed' : 'pointer', transition: 'background 0.2s' }} onMouseOver={(e) => { if(!isLocked) e.currentTarget.style.background = '#F1F5F9'; }} onMouseOut={(e) => { if(!isLocked) e.currentTarget.style.background = 'white'; }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <div style={{ color: isCompleted ? '#22C55E' : '#CBD5E1' }}>
+                        <CheckCircle2 size={22} fill={isCompleted ? '#DCFCE7' : 'none'} />
+                      </div>
+                      <div>
+                        <h3 style={{ fontSize: 16, fontWeight: 600, color: isLocked ? '#94A3B8' : '#1E293B', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {challenge.title}
+                          {isLocked && <Lock size={14} color="#94A3B8" />}
+                        </h3>
+                        <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>{challenge.category}</p>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 999, background: diffColor.bg, color: diffColor.text }}>
+                        {challenge.difficulty}
+                      </span>
+                      
+                      {isLocked ? (
+                        <button disabled className="btn-outline" style={{ opacity: 0.5, border: 'none', background: 'transparent' }}>
+                          Unlock at level 2
+                        </button>
+                      ) : (
+                        <button className={isCompleted ? "btn-outline" : "btn-primary"} style={{ padding: '6px 16px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                          {isCompleted ? 'Review' : 'Solve'} <Play size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ padding: 40, textAlign: 'center' }}>
+              <div style={{ width: 64, height: 64, margin: '0 auto 20px', borderRadius: 32, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <BrainCircuit size={28} color="#3B82F6" />
+              </div>
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: '#1E293B', marginBottom: 8 }}>Generate a custom mock test</h3>
+              <p style={{ color: '#64748B', maxWidth: 400, margin: '0 auto 24px' }}>
+                Upload a sample resume and target role, and our AI will generate a realistic timed test specifically for your revision.
+              </p>
+              <button className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                Configure Custom Test <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

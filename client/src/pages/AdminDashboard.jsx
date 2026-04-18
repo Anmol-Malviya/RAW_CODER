@@ -14,7 +14,13 @@ export default function AdminDashboard() {
   const [candidates, setCandidates] = useState([]);
   const [selectedJobId, setSelectedJobId] = useState('all');
   const [showNewJobModal, setShowNewJobModal] = useState(false);
-  const [newJob, setNewJob] = useState({ title: '', description: '' });
+  const [newJob, setNewJob] = useState({ 
+    title: '', 
+    description: '',
+    difficulty: 'intermediate',
+    interviewType: 'technical',
+    hasCodingRound: false
+  });
   const [isPosting, setIsPosting] = useState(false);
 
   const [filterScore, setFilterScore] = useState('all');
@@ -95,9 +101,15 @@ export default function AdminDashboard() {
     e.preventDefault();
     setIsPosting(true);
     try {
-      await createJob(newJob.title, newJob.description);
+      await createJob(newJob.title, newJob.description, newJob.difficulty, newJob.interviewType, newJob.hasCodingRound);
       setShowNewJobModal(false);
-      setNewJob({ title: '', description: '' });
+      setNewJob({ 
+        title: '', 
+        description: '',
+        difficulty: 'intermediate',
+        interviewType: 'technical',
+        hasCodingRound: false
+      });
       await loadJobs();
     } catch (e) {
       console.error(e);
@@ -301,6 +313,7 @@ export default function AdminDashboard() {
                 <tr>
                   <th>Candidate</th>
                   <th>Role</th>
+                  <th>Code</th>
                   <th>Time taken</th>
                   <th>Flags</th>
                   <th>Score</th>
@@ -352,6 +365,19 @@ export default function AdminDashboard() {
                       </td>
                       <td>
                         <span style={{ fontSize: 13, color: '#334155' }}>{c._jobTitle || '—'}</span>
+                      </td>
+                      <td>
+                        <span style={{ 
+                          fontFamily: 'ui-monospace, monospace', 
+                          fontSize: 12, 
+                          fontWeight: 600,
+                          padding: '4px 8px',
+                          background: '#F1F5F9',
+                          borderRadius: 4,
+                          color: '#475569'
+                        }}>
+                          {jobs.find(j => j._id === c.jobId)?.interviewCode || '—'}
+                        </span>
                       </td>
                       <td>
                         <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 13, color: '#334155' }}>
@@ -478,6 +504,46 @@ export default function AdminDashboard() {
                   className="input-soft"
                   style={{ resize: 'vertical', fontFamily: 'inherit' }}
                 />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label className="field-label">Difficulty</label>
+                  <select
+                    className="input-soft"
+                    value={newJob.difficulty}
+                    onChange={(e) => setNewJob({ ...newJob, difficulty: e.target.value })}
+                  >
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="field-label">Interview Type</label>
+                  <select
+                    className="input-soft"
+                    value={newJob.interviewType}
+                    onChange={(e) => setNewJob({ ...newJob, interviewType: e.target.value })}
+                  >
+                    <option value="technical">Technical</option>
+                    <option value="HR">HR</option>
+                    <option value="mixed">Mixed</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
+                <input
+                  type="checkbox"
+                  id="hasCoding"
+                  checked={newJob.hasCodingRound}
+                  onChange={(e) => setNewJob({ ...newJob, hasCodingRound: e.target.checked })}
+                  style={{ width: 16, height: 16, cursor: 'pointer' }}
+                />
+                <label htmlFor="hasCoding" style={{ fontSize: 13, fontWeight: 500, color: '#334155', cursor: 'pointer' }}>
+                  Enable Coding Round
+                </label>
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 6 }}>
                 <button type="button" className="btn-secondary" onClick={() => setShowNewJobModal(false)} disabled={isPosting}>
@@ -688,6 +754,27 @@ function ViewCandidateModal({ candidate: c, status, onClose, onShortlist, onDele
             <InfoRow icon={<Clock size={12} />} label="Time taken" value={`${Math.floor(durSec / 60)}m ${durSec % 60}s`} />
             <InfoRow icon={<AlertTriangle size={12} />} label="Flags" value={`${flags} tab switch${flags === 1 ? '' : 'es'}`} />
           </div>
+
+          {/* Video Recordings */}
+          {(c.videoUrl || c.screenUrl) && (
+            <div className="panel" style={{ padding: 16, marginBottom: 20 }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Recordings</p>
+              <div style={{ display: 'flex', gap: 12 }}>
+                {c.videoUrl && (
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 12, marginBottom: 4, color: '#64748B' }}>Candidate Camera</p>
+                    <video src={c.videoUrl} controls style={{ width: '100%', borderRadius: 8, background: '#000' }} />
+                  </div>
+                )}
+                {c.screenUrl && (
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 12, marginBottom: 4, color: '#64748B' }}>Screen Share</p>
+                    <video src={c.screenUrl} controls style={{ width: '100%', borderRadius: 8, background: '#000' }} />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Score block */}
           <div className="panel" style={{ padding: 16, marginBottom: 20 }}>

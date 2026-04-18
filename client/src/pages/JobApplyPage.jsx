@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { FileUp, ArrowLeft, CheckCircle2, Loader2, FileText, X } from 'lucide-react';
 import { useAssessment } from '../context/AssessmentContext';
 import { generateMCQ } from '../services/api';
@@ -21,9 +21,10 @@ const STEPS = [
 
 export default function JobApplyPage() {
   const { jobId } = useParams();
-  const [job, setJob] = useState(null);
+  const location = useLocation();
+  const [job, setJob] = useState(location.state?.jobData || null);
   const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!location.state?.jobData);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [activeStep, setActiveStep] = useState(0);
@@ -32,6 +33,7 @@ export default function JobApplyPage() {
   const { dispatch } = useAssessment();
 
   useEffect(() => {
+    if (job) return;
     const fetchJob = async () => {
       try {
         const response = await api.get(`/jobs/${jobId}`);
@@ -43,7 +45,7 @@ export default function JobApplyPage() {
       }
     };
     fetchJob();
-  }, [jobId]);
+  }, [jobId, job]);
 
   useEffect(() => {
     if (!generating) return;
@@ -87,6 +89,7 @@ export default function JobApplyPage() {
           questions: result.questions,
           rawQuestions: result._rawQuestions || [],
           jobRole: job?.title || 'Assessment',
+          hasCodingRound: job?.hasCodingRound || false,
         },
       });
       navigate('/assessment');
@@ -123,7 +126,7 @@ export default function JobApplyPage() {
         Start your AI assessment
       </h1>
       <p style={{ marginTop: 8, fontSize: 14, color: '#64748B' }}>
-        Upload your resume — VyorAI will analyze your experience and generate role-specific questions.
+        Upload your resume — AI Interviewer will analyze your experience and generate role-specific questions.
       </p>
 
       <div className="card" style={{ padding: 20, marginTop: 24, background: '#F8FAFC' }}>

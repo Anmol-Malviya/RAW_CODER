@@ -2,6 +2,13 @@ import { Groq } from 'groq-sdk';
 import extractTextFromPDF from '../utils/pdfParser.js';
 import Session from '../models/Session.js';
 import Job from '../models/Job.js';
+import { v2 as cloudinary } from 'cloudinary';
+
+cloudinary.config({ 
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+  api_key: process.env.CLOUDINARY_API_KEY, 
+  api_secret: process.env.CLOUDINARY_API_SECRET 
+});
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || 'default-key',
@@ -166,6 +173,18 @@ export const submitAssessment = async (req, res) => {
   }
 };
 
+export const getUserSessions = async (req, res) => {
+  try {
+    const sessions = await Session.find({ candidateId: req.user.id })
+                                  .populate('jobId', 'title company')
+                                  .sort({ createdAt: -1 });
+    res.status(200).json(sessions);
+  } catch (error) {
+    console.error('Get User Sessions error:', error);
+    res.status(500).json({ error: 'Failed to fetch user sessions' });
+  }
+};
+
 export const getSession = async (req, res) => {
   try {
     const session = await Session.findById(req.params.id);
@@ -175,5 +194,45 @@ export const getSession = async (req, res) => {
     res.json(session);
   } catch (error) {
     res.status(500).json({ error: 'Failed to retrieve session' });
+  }
+};
+
+export const uploadRecording = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No video file provided' });
+    const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ error: 'Session ID required' });
+    
+    const uploadStream = cloudinary.uploader.upload_stream({ resource_type: 'video', folder: 'vyorai_interviews' }, async (error, result) => {
+      if (error) return res.status(500).json({ error: 'Cloudinary upload failed' });
+      
+      await Session.findByIdAndUpdate(sessionId, { videoUrl: result.secure_url });
+      res.json({ message: 'Upload successful', videoUrl: result.secure_url });
+    });
+    
+    uploadStream.end(req.file.buffer);
+  } catch (error) {
+    console.error('Upload Error:', error);
+    res.status(500).json({ error: 'Failed to upload recording' });
+  }
+};
+
+export const uploadScreenRecording = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No video file provided' });
+    const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ error: 'Session ID required' });
+    
+    const uploadStream = cloudinary.uploader.upload_stream({ resource_type: 'video', folder: 'vyorai_interviews' }, async (error, result) => {
+      if (error) return res.status(500).json({ error: 'Cloudinary upload failed' });
+      
+      await Session.findByIdAndUpdate(sessionId, { screenUrl: result.secure_url });
+      res.json({ message: 'Screen upload successful', screenUrl: result.secure_url });
+    });
+    
+    uploadStream.end(req.file.buffer);
+  } catch (error) {
+    console.error('Screen Upload Error:', error);
+    res.status(500).json({ error: 'Failed to upload screen recording' });
   }
 };

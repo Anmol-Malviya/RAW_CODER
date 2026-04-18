@@ -34,19 +34,34 @@ async function runTests() {
     // 4. Create Job (Admin)
     console.log('\n[4] Creating Job (Admin)...');
     const jobRes = await axios.post(`${API_URL}/jobs`, 
-      { title: 'AI Engineer', description: 'Experience with LLMs' },
+      { 
+        title: 'AI Engineer', 
+        description: 'Experience with LLMs',
+        difficulty: 'advanced',
+        interviewType: 'technical',
+        hasCodingRound: true
+      },
       { headers: { Authorization: `Bearer ${adminToken}` } }
     );
     jobId = jobRes.data._id;
+    const interviewCode = jobRes.data.interviewCode;
     console.log('✅ Job Created ID:', jobId);
+    console.log('✅ Generated Interview Code:', interviewCode);
 
-    // 5. Fetch Jobs (Candidate)
-    console.log('\n[5] Fetching Jobs (Candidate)...');
+    // 5. Validate Interview Code (Candidate)
+    console.log('\n[5] Validating Interview Code (Candidate)...');
+    const validateRes = await axios.get(`${API_URL}/jobs/code/${interviewCode}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    console.log('✅ Code Validated. Job title:', validateRes.data.title);
+
+    // 6. Fetch Jobs (Candidate)
+    console.log('\n[6] Fetching Jobs (Candidate)...');
     const jobsRes = await axios.get(`${API_URL}/jobs`, { headers: { Authorization: `Bearer ${token}` } });
     console.log(`✅ Jobs found: ${jobsRes.data.length}`);
 
-    // 6. Generate MCQ (Candidate)
-    console.log('\n[6] Generating MCQ (Candidate)...');
+    // 7. Generate MCQ (Candidate)
+    console.log('\n[7] Generating MCQ (Candidate)...');
     // Create a dummy file for upload
     const dummyPdfPath = path.resolve('dummy.pdf');
     fs.writeFileSync(dummyPdfPath, 'Dummy PDF content for testing');
@@ -66,8 +81,8 @@ async function runTests() {
       
       const sessionId = mcqRes.data.sessionId;
 
-      // 7. Submit Assessment
-      console.log('\n[7] Submitting Assessment...');
+      // 8. Submit Assessment
+      console.log('\n[8] Submitting Assessment...');
       const answers = { 1: 'Option A', 2: 'Option A' }; // Based on mock questions
       const submitRes = await axios.post(`${API_URL}/submit-assessment`, 
         { sessionId, answers, tabSwitchCount: 0 },

@@ -54,8 +54,8 @@ export default function LoginPage() {
         className="login-left"
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 48 }}>
-          <div className="brand-mark">V</div>
-          <span style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>VyorAI</span>
+          <div className="brand-mark">A</div>
+          <span style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>AI Interviewer</span>
         </div>
 
         <h1 style={{ fontSize: 44, fontWeight: 700, color: '#0F172A', lineHeight: 1.1, letterSpacing: '-0.02em', maxWidth: 640 }}>
@@ -97,7 +97,7 @@ export default function LoginPage() {
       >
         <div className="card" style={{ width: '100%', maxWidth: 400, padding: 32 }}>
           <h2 style={{ fontSize: 22, fontWeight: 600, color: '#0F172A', letterSpacing: '-0.01em' }}>
-            {isLogin ? 'Sign in to VyorAI' : 'Create your account'}
+            {isLogin ? 'Sign in to AI Interviewer' : 'Create your account'}
           </h2>
           <p style={{ marginTop: 6, fontSize: 13, color: '#64748B' }}>
             {isLogin ? 'Welcome back. Please enter your details.' : 'Get started in under a minute.'}
@@ -181,7 +181,7 @@ export default function LoginPage() {
           </form>
 
           <p style={{ marginTop: 20, textAlign: 'center', fontSize: 13, color: '#64748B' }}>
-            {isLogin ? 'New to VyorAI? ' : 'Already have an account? '}
+            {isLogin ? 'New to AI Interviewer? ' : 'Already have an account? '}
             <button
               type="button"
               onClick={() => {

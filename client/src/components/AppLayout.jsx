@@ -1,18 +1,20 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Video, FileBarChart2, Code2, LogOut } from 'lucide-react';
+import { LayoutDashboard, Settings, Video, BarChart3, Database, BookOpen, User, HelpCircle, LogOut } from 'lucide-react';
 
 const candidateNav = [
   { label: 'Dashboard', href: '/candidate', icon: LayoutDashboard, match: '/candidate' },
-  { label: 'Interviews', href: '/assessment', icon: Video, match: '/assessment' },
-  { label: 'Coding', href: '/coding', icon: Code2, match: '/coding' },
-  { label: 'Reports', href: '/results', icon: FileBarChart2, match: '/results' },
+  { label: 'Practice Area', href: '/candidate/practice', icon: BookOpen, match: '/candidate/practice' },
+  { label: 'My Profile', href: '/candidate/profile', icon: User, match: '/candidate/profile' },
+  { label: 'Help & Support', href: '/candidate/support', icon: HelpCircle, match: '/candidate/support' },
 ];
 
 const adminNav = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, match: '/admin' },
-  { label: 'Interviews', href: '/admin', icon: Video, match: '/interviews' },
-  { label: 'Reports', href: '/results', icon: FileBarChart2, match: '/results' },
+  { label: 'Live Monitoring', href: '/admin/live', icon: Video, match: '/admin/live' },
+  { label: 'Question Bank', href: '/admin/questions', icon: Database, match: '/admin/questions' },
+  { label: 'Analytics', href: '/admin/analytics', icon: BarChart3, match: '/admin/analytics' },
+  { label: 'Settings', href: '/admin/settings', icon: Settings, match: '/admin/settings' },
 ];
 
 const titleMap = [
@@ -22,11 +24,12 @@ const titleMap = [
   { match: '/results', title: 'Report' },
   { match: '/coding', title: 'Coding test' },
   { match: '/admin', title: 'Admin monitoring' },
+  { match: '/admin/live', title: 'Live Monitoring' },
 ];
 
 function getPageTitle(pathname) {
   const match = titleMap.find((item) => pathname.startsWith(item.match));
-  return match ? match.title : 'VyorAI';
+  return match ? match.title : 'AI Interviewer';
 }
 
 export default function AppLayout() {
@@ -43,9 +46,9 @@ export default function AppLayout() {
       <aside className="sidebar">
         <div>
           <div className="sidebar-brand">
-            <div className="brand-mark">V</div>
+            <div className="brand-mark">A</div>
             <div>
-              <p className="brand-name">VyorAI</p>
+              <p className="brand-name">AI Interviewer</p>
               <p className="brand-subtitle">Interview platform</p>
             </div>
           </div>

@@ -96,3 +96,29 @@ export const login = async (req, res) => {
     res.status(500).json({ error: 'Login failed' });
   }
 };
+
+export const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, profile } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (name) user.name = name;
+    if (profile) user.profile = { ...user.profile, ...profile };
+    
+    await user.save();
+    res.json({ message: 'Profile updated successfully', user: { id: user._id, name: user.name, email: user.email, profile: user.profile } });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+};

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, AlertTriangle, Eye, Mic, MicOff, Video, PhoneOff, Circle } from 'lucide-react';
+import { io } from 'socket.io-client';
 import { useAssessment } from '../context/AssessmentContext';
 import { useProctoring } from '../hooks/useProctoring';
-import { submitAssessment } from '../services/api';
+import { submitAssessment, uploadRecording, uploadScreenRecording } from '../services/api';
 
 export default function AssessmentPage() {
   const navigate = useNavigate();
@@ -13,12 +14,83 @@ export default function AssessmentPage() {
   const [micOn, setMicOn] = useState(true);
   const [elapsed, setElapsed] = useState(0);
   const videoRef = useRef(null);
+  const socketRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
+  const screenRecorderRef = useRef(null);
+  const screenChunksRef = useRef([]);
 
   const { questions, currentQuestion, answers, sessionId, jobRole, rawQuestions } = state;
   const question = questions[currentQuestion];
   const isLastQuestion = currentQuestion === questions.length - 1;
   const answeredCount = Object.keys(answers).length;
   const progress = ((currentQuestion + 1) / questions.length) * 100;
+
+  const [screenShared, setScreenShared] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+  const synthRef = useRef(window.speechSynthesis);
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        let interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            const final = event.results[i][0].transcript;
+            setTranscript(prev => prev + ' ' + final);
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        if (micOn && state.status === 'active') recognition.start();
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  // AI speaks the question
+  useEffect(() => {
+    if (question && state.status === 'active') {
+      const speak = (text) => {
+        synthRef.current.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.onstart = () => {
+          if (recognitionRef.current) recognitionRef.current.stop();
+          setIsListening(false);
+        };
+        utterance.onend = () => {
+          if (micOn && recognitionRef.current) {
+            try {
+              recognitionRef.current.start();
+              setIsListening(true);
+            } catch (e) {}
+          }
+        };
+        synthRef.current.speak(utterance);
+      };
+      
+      const prompt = `Question ${currentQuestion + 1}: ${question.question}`;
+      speak(prompt);
+    }
+  }, [currentQuestion, question, state.status, micOn]);
 
   useEffect(() => {
     if (state.status !== 'active' || questions.length === 0) {
@@ -43,17 +115,86 @@ export default function AssessmentPage() {
 
   useEffect(() => {
     let stream;
+    socketRef.current = io(process.env.REACT_APP_API_URL || 'http://localhost:5000');
+    
     const enable = async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         if (videoRef.current) videoRef.current.srcObject = stream;
+        
+        try {
+          const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+          mediaRecorderRef.current = mediaRecorder;
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) recordedChunksRef.current.push(event.data);
+          };
+          mediaRecorder.start();
+        } catch (mediaErr) {
+          console.error("Camera recorder init failed:", mediaErr);
+        }
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const interval = setInterval(() => {
+          if (videoRef.current && videoRef.current.readyState === 4) {
+            canvas.width = videoRef.current.videoWidth;
+            canvas.height = videoRef.current.videoHeight;
+            ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+            const frame = canvas.toDataURL('image/jpeg', 0.5);
+            socketRef.current.emit('candidate_frame', { 
+              candidateId: sessionId || 'mock-id', 
+              name: 'Candidate User', 
+              role: jobRole || 'Candidate Role', 
+              flags: proctoring.tabSwitchCount, 
+              status: proctoring.tabSwitchCount > 3 ? 'critical' : proctoring.tabSwitchCount > 0 ? 'warning' : 'clean',
+              duration: Math.floor((Date.now() - (state.startedAt || Date.now())) / 1000) + 's',
+              frame 
+            });
+          }
+        }, 300); // 3-4 fps for real-time feel
+        return () => clearInterval(interval);
       } catch (e) {
-        // camera permission denied — leave placeholder
+        console.error(e);
       }
     };
-    enable();
+    const cleanup = enable();
     return () => {
+      if (cleanup && typeof cleanup === 'function') cleanup();
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
       if (stream) stream.getTracks().forEach((t) => t.stop());
+      if (socketRef.current) socketRef.current.disconnect();
+    };
+  }, [sessionId]);
+
+  const handleStartScreenShare = async () => {
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      const screenRecorder = new MediaRecorder(screenStream, { mimeType: 'video/webm' });
+      screenRecorderRef.current = screenRecorder;
+      screenRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) screenChunksRef.current.push(event.data);
+      };
+      screenRecorder.start();
+      setScreenShared(true);
+      
+      // Setup listener for user stopping share via browser UI
+      screenStream.getVideoTracks()[0].onended = () => {
+        if (screenRecorder.state !== 'inactive') screenRecorder.stop();
+      };
+    } catch (screenErr) {
+      console.error("Screen recorder init failed:", screenErr);
+      alert("Screen sharing is mandatory for the interview. Please try again and select 'Entire Screen'.");
+    }
+  };
+
+  // Cleanup for screen share separately, in case it wasn't started in the main useEffect
+  useEffect(() => {
+    return () => {
+      if (screenRecorderRef.current && screenRecorderRef.current.state !== 'inactive') {
+        screenRecorderRef.current.stop();
+      }
     };
   }, []);
 
@@ -64,6 +205,25 @@ export default function AssessmentPage() {
   const handleSubmit = async () => {
     setSubmitting(true);
     const testDurationSeconds = Math.floor((Date.now() - state.startedAt) / 1000);
+    
+    // Stop camera recording and upload
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.onstop = async () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+        try { uploadRecording(sessionId, blob).catch(console.error); } catch (err) {}
+      };
+      mediaRecorderRef.current.stop();
+    }
+
+    // Stop screen recording and upload
+    if (screenRecorderRef.current && screenRecorderRef.current.state !== 'inactive') {
+      screenRecorderRef.current.onstop = async () => {
+        const blob = new Blob(screenChunksRef.current, { type: 'video/webm' });
+        try { uploadScreenRecording(sessionId, blob).catch(console.error); } catch (err) {}
+      };
+      screenRecorderRef.current.stop();
+    }
+
     try {
       const result = await submitAssessment(sessionId, answers, proctoring.tabSwitchCount, testDurationSeconds);
       let score = result.score;
@@ -80,7 +240,11 @@ export default function AssessmentPage() {
         payload: { score: score ?? 0, tabSwitchCount: proctoring.tabSwitchCount, questions: finalQuestions },
       });
       proctoring.deactivate();
-      navigate('/results');
+      if (state.hasCodingRound) {
+        navigate('/coding');
+      } else {
+        navigate('/results');
+      }
     } catch (err) {
       console.error('Submit error:', err);
       if (rawQuestions.length > 0) {
@@ -98,6 +262,30 @@ export default function AssessmentPage() {
   };
 
   if (!question) return null;
+
+  if (!screenShared) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', color: '#E2E8F0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: 24, textAlign: 'center' }}>
+        <div style={{ background: '#1E293B', padding: 32, borderRadius: 16, maxWidth: 400, boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+          <div style={{ width: 64, height: 64, borderRadius: 32, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+            <Video size={32} color="#3B82F6" />
+          </div>
+          <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12, color: '#F8FAFC' }}>Screen Share Required</h2>
+          <p style={{ fontSize: 16, color: '#94A3B8', marginBottom: 24, lineHeight: 1.5 }}>
+            To begin your interview, you must share your screen. This will be recorded alongside your camera. Please ensure you select "Entire Screen" in the prompt.
+          </p>
+          <button 
+            onClick={handleStartScreenShare}
+            style={{ width: '100%', background: '#3B82F6', color: 'white', border: 'none', padding: '14px 20px', borderRadius: 8, fontSize: 16, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s' }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#2563EB'}
+            onMouseOut={(e) => e.currentTarget.style.background = '#3B82F6'}
+          >
+            Share Screen & Start Interview
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const mins = Math.floor(elapsed / 60);
   const secs = elapsed % 60;
@@ -177,10 +365,9 @@ export default function AssessmentPage() {
             <p style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
               Live transcript
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 140, overflowY: 'auto' }}>
-              <TranscriptLine>I have experience building scalable APIs and maintaining CI/CD pipelines.</TranscriptLine>
-              <TranscriptLine>I prefer React and Node, and I've built interview platforms before.</TranscriptLine>
-              <TranscriptLine muted>… listening …</TranscriptLine>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 180, overflowY: 'auto' }}>
+              <TranscriptLine>{transcript || (isListening ? 'Wait, I am listening...' : 'Initializing...')}</TranscriptLine>
+              {isListening && <TranscriptLine muted>… listening …</TranscriptLine>}
             </div>
           </div>
         </div>
@@ -257,7 +444,10 @@ export default function AssessmentPage() {
           <button
             type="button"
             disabled={currentQuestion === 0}
-            onClick={() => dispatch({ type: 'PREV_QUESTION' })}
+            onClick={() => {
+              setTranscript('');
+              dispatch({ type: 'PREV_QUESTION' });
+            }}
             style={{
               padding: '10px 16px', borderRadius: 8, background: 'transparent',
               border: '1px solid #334155', color: currentQuestion === 0 ? '#475569' : '#E2E8F0',
@@ -286,7 +476,10 @@ export default function AssessmentPage() {
           ) : (
             <button
               type="button"
-              onClick={() => dispatch({ type: 'NEXT_QUESTION' })}
+              onClick={() => {
+                setTranscript('');
+                dispatch({ type: 'NEXT_QUESTION' });
+              }}
               className="btn-primary"
               style={{ padding: '10px 18px' }}
             >

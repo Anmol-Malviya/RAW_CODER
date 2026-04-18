@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Clock, Play, Send, FileCode2, Check, Terminal } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAssessment } from '../context/AssessmentContext';
+import { Clock, Play, Send, FileCode2, Terminal } from 'lucide-react';
 
 const LANGUAGES = ['JavaScript', 'TypeScript', 'Python', 'Java', 'Go'];
 
@@ -11,12 +13,20 @@ function filterJobs(jobs, keyword) {
 `;
 
 export default function CodingTestPage() {
+  const navigate = useNavigate();
+  const { state } = useAssessment();
   const [language, setLanguage] = useState('JavaScript');
   const [code, setCode] = useState(DEFAULT_CODE);
   const [output, setOutput] = useState('');
   const [running, setRunning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(45 * 60);
   const editorRef = useRef(null);
+
+  useEffect(() => {
+    if (state.status === 'idle') {
+      navigate('/candidate');
+    }
+  }, [state.status, navigate]);
 
   useEffect(() => {
     const id = setInterval(() => setTimeLeft((t) => Math.max(0, t - 1)), 1000);
@@ -51,8 +61,12 @@ export default function CodingTestPage() {
     }
   };
 
+  const handleSubmitResult = () => {
+    navigate('/results');
+  };
+
   return (
-    <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1400, margin: '0 auto', padding: '24px' }}>
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
@@ -115,7 +129,7 @@ export default function CodingTestPage() {
             <pre style={{ marginTop: 6, padding: 12, borderRadius: 8, background: '#F8FAFC', border: '1px solid #E2E8F0', fontSize: 12, color: '#334155', lineHeight: 1.6, overflow: 'auto' }}>
 {`Input:
 jobs = [
-  { title: "Frontend Engineer", company: "VyorAI", location: "Remote" },
+  { title: "Frontend Engineer", company: "AI Interviewer", location: "Remote" },
   { title: "Data Analyst", company: "Stripe", location: "NYC" }
 ]
 keyword = "remote"
@@ -149,7 +163,7 @@ Output:
               onKeyDown={handleTabInEditor}
               spellCheck={false}
               className="editor-textarea"
-              style={{ minHeight: 420, border: 'none', borderRadius: 0, background: '#0B1120' }}
+              style={{ minHeight: 420, border: 'none', borderRadius: 0, background: '#0B1120', color: '#E2E8F0', padding: '16px', width: '100%', fontFamily: 'ui-monospace, monospace', outline: 'none', resize: 'none' }}
             />
           </div>
 
@@ -169,7 +183,11 @@ Output:
               <Play size={14} />
               {running ? 'Running…' : 'Run'}
             </button>
-            <button className="btn-primary" style={{ padding: '10px 20px' }}>
+            <button 
+              className="btn-primary" 
+              style={{ padding: '10px 20px' }}
+              onClick={handleSubmitResult}
+            >
               <Send size={14} />
               Submit solution
             </button>

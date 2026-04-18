@@ -37,6 +37,7 @@ function assessmentReducer(state, action) {
         rawQuestions: action.payload.rawQuestions || [],
         jobRole: action.payload.jobRole || '',
         resumeSnippet: action.payload.resumeSnippet || '',
+        hasCodingRound: action.payload.hasCodingRound || false,
         status: 'active',
         currentQuestion: 0,
         answers: {},

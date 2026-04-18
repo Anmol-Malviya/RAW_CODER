@@ -4,10 +4,35 @@ import cors from 'cors';
 import connectDB from './config/db.js';
 import apiRoutes from './routes/api.js';
 
+import http from 'http';
+import { Server } from 'socket.io';
+
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// Socket.io integration for video feed
+io.on('connection', (socket) => {
+  console.log('Socket connected:', socket.id);
+
+  socket.on('candidate_frame', (data) => {
+    // Expected data: { candidateId, name, role, duration, flags, frame (base64 string) }
+    // Broadcast to all admins (everyone else)
+    socket.broadcast.emit('live_frame', { ...data, socketId: socket.id });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Socket disconnected:', socket.id);
+    socket.broadcast.emit('candidate_disconnected', { socketId: socket.id });
+  });
+});
+
 // Middleware
 app.use(cors({
   origin: true,
@@ -15,8 +40,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   credentials: true
 }));
-
-// Preflight requests are handled by the cors middleware above
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -49,7 +72,7 @@ const startServer = async () => {
   console.log('🌐 Server initializing...');
   // Only start the server if not running as a Vercel function
   if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`🚀 VyorAI Server running on http://localhost:${PORT}`);
       console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
     });
@@ -58,4 +81,4 @@ const startServer = async () => {
 
 startServer();
 
-export default app;
+export default server;

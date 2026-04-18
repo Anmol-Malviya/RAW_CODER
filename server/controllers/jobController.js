@@ -9,15 +9,29 @@ const isMockMode = () => mongoose.connection.readyState !== 1;
 
 export const createJob = async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, difficulty, interviewType, hasCodingRound } = req.body;
     
     if (!title || !description) {
       return res.status(400).json({ error: 'Title and description are required' });
     }
 
+    // Generate unique 6-digit interview code
+    const interviewCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
     if (isMockMode()) {
       console.log('⚡ Mock Mode: Creating job in-memory');
-      const job = { _id: `job_${Date.now()}`, title, description, adminId: req.user.id, isActive: true, createdAt: new Date() };
+      const job = { 
+        _id: `job_${Date.now()}`, 
+        title, 
+        description, 
+        difficulty: difficulty || 'intermediate',
+        interviewType: interviewType || 'technical',
+        hasCodingRound: !!hasCodingRound,
+        interviewCode,
+        adminId: req.user.id, 
+        isActive: true, 
+        createdAt: new Date() 
+      };
       mockJobs.push(job);
       return res.status(201).json(job);
     }
@@ -25,6 +39,10 @@ export const createJob = async (req, res) => {
     const job = new Job({
       title,
       description,
+      difficulty: difficulty || 'intermediate',
+      interviewType: interviewType || 'technical',
+      hasCodingRound: !!hasCodingRound,
+      interviewCode,
       adminId: req.user.id,
     });
 
@@ -77,5 +95,23 @@ export const getJobCandidates = async (req, res) => {
   } catch (error) {
     console.error('Get Job Candidates Error:', error);
     res.status(500).json({ error: 'Failed to fetch candidates' });
+  }
+};
+
+export const getJobByCode = async (req, res) => {
+  try {
+    const { code } = req.params;
+    if (isMockMode()) {
+      const job = mockJobs.find(j => j.interviewCode === code.toUpperCase());
+      if (!job) return res.status(404).json({ error: 'Interview not found' });
+      return res.json(job);
+    }
+    const job = await Job.findOne({ interviewCode: code.toUpperCase(), isActive: true });
+    if (!job) {
+      return res.status(404).json({ error: 'Interview code not valid or expired' });
+    }
+    res.json(job);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to validate code' });
   }
 };
