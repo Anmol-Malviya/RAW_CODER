@@ -30,13 +30,9 @@ const titleMap = [
   { match: '/assessment', title: 'Live interview' },
   { match: '/results', title: 'Report' },
   { match: '/coding', title: 'Coding test' },
-<<<<<<< HEAD
-  { match: '/admin', title: 'Admin monitoring' },
-=======
   { match: '/voice-interview', title: 'Voice Interview' },
   // Admin sub-routes (specific before generic)
   { match: '/admin/roles', title: 'Role Management' },
->>>>>>> 10142a84641bd9c1e21eaa2f6792a465e7c2bbee
   { match: '/admin/live', title: 'Live Monitoring' },
   { match: '/admin/questions', title: 'Question Bank' },
   { match: '/admin/sessions', title: 'Interview Sessions' },
