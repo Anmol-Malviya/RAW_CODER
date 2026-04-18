@@ -131,4 +131,34 @@ export const uploadScreenRecording = async (sessionId, videoBlob) => {
   return response.data;
 };
 
+export const fetchQuestions = async () => {
+  const response = await api.get('/questions');
+  return response.data;
+};
+
+export const addQuestion = async (questionData) => {
+  const response = await api.post('/questions', questionData);
+  return response.data;
+};
+
+export const deleteQuestion = async (id) => {
+  const response = await api.delete(`/questions/${id}`);
+  return response.data;
+};
+
+export const fetchAnalytics = async () => {
+  const response = await api.get('/analytics');
+  return response.data;
+};
+
+export const fetchSettings = async () => {
+  const response = await api.get('/settings');
+  return response.data;
+};
+
+export const updateSetting = async (key, value) => {
+  const response = await api.post('/settings', { key, value });
+  return response.data;
+};
+
 export default api;

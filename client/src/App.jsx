@@ -16,7 +16,10 @@ import CandidateSupport from './pages/CandidateSupport';
 import CandidatePractice from './pages/CandidatePractice';
 import AdminLiveMonitor from './pages/AdminLiveMonitor';
 import VoiceInterviewPage from './pages/VoiceInterviewPage';
-import { AdminSettings, AdminAnalytics, AdminQuestions } from './pages/PlaceholderPages';
+import QuestionBankPage from './pages/QuestionBankPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import SettingsPage from './pages/SettingsPage';
+// import { AdminSettings } from './pages/PlaceholderPages'; // No longer needed
 
 function ProtectedRoute({ children, role }) {
   const { user } = useAuth();
@@ -60,9 +63,9 @@ function AppRoutes() {
       <Route element={<ProtectedRoute role="admin"><AuthenticatedLayout /></ProtectedRoute>}>
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/live" element={<AdminLiveMonitor />} />
-        <Route path="/admin/questions" element={<AdminQuestions />} />
-        <Route path="/admin/analytics" element={<AdminAnalytics />} />
-        <Route path="/admin/settings" element={<AdminSettings />} />
+        <Route path="/admin/questions" element={<QuestionBankPage />} />
+        <Route path="/admin/analytics" element={<AnalyticsPage />} />
+        <Route path="/admin/settings" element={<SettingsPage />} />
       </Route>
     </Routes>
   );

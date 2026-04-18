@@ -6,6 +6,10 @@ import { createJob, getJobs, getJobDetails, getJobCandidates, getJobByCode } fro
 import { generateMCQ, submitAssessment, getSession, uploadRecording, uploadScreenRecording, getUserSessions, generatePracticeSession } from '../controllers/mcqController.js';
 import { voiceChat } from '../controllers/voiceController.js';
 import { chatWithBot } from '../controllers/chatController.js';
+import { getQuestions, createQuestion, deleteQuestion } from '../controllers/questionController.js';
+import { getDashboardAnalytics } from '../controllers/analyticsController.js';
+import { getSettings, updateSetting } from '../controllers/settingController.js';
+
 
 const router = Router();
 
@@ -36,6 +40,18 @@ router.post('/voice-chat', requireAuth, voiceChat);
 
 // Bot Routes
 router.post('/chat', chatWithBot);
+
+// Question Bank Routes
+router.get('/questions', requireAuth, requireAdmin, getQuestions);
+router.post('/questions', requireAuth, requireAdmin, createQuestion);
+router.delete('/questions/:id', requireAuth, requireAdmin, deleteQuestion);
+
+// Analytics Routes
+router.get('/analytics', requireAuth, requireAdmin, getDashboardAnalytics);
+
+// Settings Routes
+router.get('/settings', requireAuth, requireAdmin, getSettings);
+router.post('/settings', requireAuth, requireAdmin, updateSetting);
 
 // Health check
 router.get('/health', (req, res) => {
