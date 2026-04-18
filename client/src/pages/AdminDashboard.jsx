@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { fetchJobs, createJob, getJobCandidates } from '../services/api';
+import { fetchJobs, createJob, getJobCandidates, sendCandidateEmail, sendBulkCandidateEmails } from '../services/api';
 import {
   Plus, Users, AlertTriangle, Briefcase, Search, X, Download, Eye,
   MoreHorizontal, TrendingUp, CheckCircle2, Trash2, Star, StarOff, RotateCcw,
-  Calendar, FileText, Mail, Clock,
+  Calendar, FileText, Mail, Clock, Send, CheckCheck, XCircle,
 } from 'lucide-react';
 
 const STATUS_KEY = 'vyorai:admin:statuses';
@@ -134,6 +134,86 @@ export default function AdminDashboard() {
       return copy;
     });
     setOpenMenuId(null);
+  };
+
+  // ─── Email helper ───
+  const [emailSending, setEmailSending] = useState({});
+  const [emailSent, setEmailSent] = useState({});
+
+  const handleSendEmail = async (candidate, type) => {
+    const email = candidate.candidateId?.email;
+    const name = candidate.candidateId?.name || 'Candidate';
+    const jobTitle = candidate._jobTitle || '';
+    if (!email || email === '—') {
+      alert('No email address found for this candidate.');
+      return;
+    }
+    const key = `${candidate._id}_${type}`;
+    setEmailSending((p) => ({ ...p, [key]: true }));
+    try {
+      await sendCandidateEmail(email, name, jobTitle, type);
+      setEmailSent((p) => ({ ...p, [key]: true }));
+      // Auto-update status when sending email
+      if (type === 'selected' && getStatus(candidate._id) !== 'shortlisted') {
+        setStatus(candidate._id, 'shortlisted');
+      }
+      if (type === 'rejected' && getStatus(candidate._id) !== 'deleted') {
+        setStatus(candidate._id, 'deleted');
+      }
+    } catch (err) {
+      console.error('Email send failed:', err);
+      alert('Failed to send email: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setEmailSending((p) => ({ ...p, [key]: false }));
+    }
+  };
+
+  const [bulkSendingType, setBulkSendingType] = useState(null);
+
+  const handleBulkEmail = async (type) => {
+    const isSelected = type === 'selected';
+    // Match current filter list, not the entire database
+    const targetCandidates = filtered.filter(c => {
+      const isShortlisted = getStatus(c._id) === 'shortlisted';
+      const email = c.candidateId?.email;
+      return (isSelected ? isShortlisted : !isShortlisted) && email && email !== '—';
+    });
+
+    if (targetCandidates.length === 0) {
+      alert(`No valid candidates to send ${isSelected ? 'Selection' : 'Rejection'} emails to in the current view.`);
+      return;
+    }
+
+    const confirmMsg = `You are about to send ${isSelected ? 'Selected' : 'Rejected'} emails to ${targetCandidates.length} candidate(s).\n\nAre you sure you want to proceed?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setBulkSendingType(type);
+    
+    const payload = targetCandidates.map(c => ({
+      email: c.candidateId.email,
+      name: c.candidateId.name || 'Candidate',
+      jobTitle: c._jobTitle || ''
+    }));
+
+    try {
+      const response = await sendBulkCandidateEmails(payload, type);
+      
+      // Auto-mark rejected as deleted for visual cleanliness
+      if (!isSelected) {
+        setStatuses(prev => {
+          const up = { ...prev };
+          targetCandidates.forEach(c => up[c._id] = 'deleted');
+          return up;
+        });
+      }
+      
+      alert(`Success! Scheduled ${targetCandidates.length} email(s) for delivery.`);
+    } catch (err) {
+      console.error('Bulk email failed:', err);
+      alert('Bulk send failed: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setBulkSendingType(null);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -291,12 +371,44 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Results count */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+      {/* Results count & Bulk Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 12 }}>
         <p style={{ fontSize: 13, color: '#64748B' }}>
           {filtered.length} of {stats.total} candidate{stats.total !== 1 ? 's' : ''}
           {activeFilterCount > 0 && <span style={{ marginLeft: 6, color: '#4F46E5' }}>· {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active</span>}
         </p>
+        
+        {/* Bulk Action Buttons */}
+        {filtered.length > 0 && (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => handleBulkEmail('selected')}
+              disabled={bulkSendingType !== null}
+              className="btn-primary"
+              style={{
+                background: 'linear-gradient(135deg, #059669, #10B981)',
+                padding: '6px 14px', fontSize: 13, border: 'none', borderRadius: 8,
+                opacity: bulkSendingType !== null ? 0.6 : 1, transition: 'all 0.2s'
+              }}
+            >
+              <CheckCheck size={14} style={{ marginRight: 6 }} />
+              {bulkSendingType === 'selected' ? 'Sending...' : 'Bulk Email: Selected'}
+            </button>
+            <button
+              onClick={() => handleBulkEmail('rejected')}
+              disabled={bulkSendingType !== null}
+              className="btn-secondary"
+              style={{
+                color: '#BE123C', borderColor: '#FECDD3', background: '#FFF1F2',
+                padding: '6px 14px', fontSize: 13, borderRadius: 8,
+                opacity: bulkSendingType !== null ? 0.6 : 1, transition: 'all 0.2s'
+              }}
+            >
+               <XCircle size={14} style={{ marginRight: 6 }} />
+              {bulkSendingType === 'rejected' ? 'Sending...' : 'Bulk Email: Rejected'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -464,6 +576,11 @@ export default function AdminDashboard() {
                                 onShortlist={() => setStatus(c._id, shortlisted ? null : 'shortlisted')}
                                 onDelete={() => setStatus(c._id, 'deleted')}
                                 shortlisted={shortlisted}
+                                onSendSelected={() => handleSendEmail(c, 'selected')}
+                                onSendRejected={() => handleSendEmail(c, 'rejected')}
+                                emailSending={emailSending[`${c._id}_selected`] || emailSending[`${c._id}_rejected`]}
+                                emailSent={emailSent}
+                                candidateId={c._id}
                               />
                             )}
                           </div>
@@ -491,6 +608,10 @@ export default function AdminDashboard() {
             setViewing(null);
           }}
           onDownload={() => downloadReport(viewing)}
+          onSendSelected={() => handleSendEmail(viewing, 'selected')}
+          onSendRejected={() => handleSendEmail(viewing, 'rejected')}
+          emailSending={emailSending}
+          emailSent={emailSent}
         />
       )}
 
@@ -691,7 +812,9 @@ function IconAction({ title, children, onClick, active }) {
   );
 }
 
-function Dropdown({ onShortlist, onDelete, shortlisted }) {
+function Dropdown({ onShortlist, onDelete, shortlisted, onSendSelected, onSendRejected, emailSending, emailSent, candidateId }) {
+  const selectedSent = emailSent?.[`${candidateId}_selected`];
+  const rejectedSent = emailSent?.[`${candidateId}_rejected`];
   return (
     <div
       role="menu"
@@ -699,7 +822,7 @@ function Dropdown({ onShortlist, onDelete, shortlisted }) {
         position: 'absolute',
         right: 0,
         top: 'calc(100% + 6px)',
-        minWidth: 180,
+        minWidth: 220,
         background: '#FFFFFF',
         border: '1px solid #E2E8F0',
         borderRadius: 8,
@@ -711,6 +834,15 @@ function Dropdown({ onShortlist, onDelete, shortlisted }) {
       <DropdownItem onClick={onShortlist} tone={shortlisted ? 'slate' : 'emerald'}>
         {shortlisted ? <StarOff size={14} /> : <Star size={14} />}
         {shortlisted ? 'Remove shortlist' : 'Keep / Shortlist'}
+      </DropdownItem>
+      <div style={{ height: 1, background: '#F1F5F9', margin: '4px 0' }} />
+      <DropdownItem onClick={!emailSending && !selectedSent ? onSendSelected : undefined} tone="emerald">
+        {selectedSent ? <CheckCheck size={14} /> : <Send size={14} />}
+        {emailSending ? 'Sending…' : selectedSent ? 'Selected mail sent ✓' : 'Send Selected Email'}
+      </DropdownItem>
+      <DropdownItem onClick={!emailSending && !rejectedSent ? onSendRejected : undefined} tone="rose">
+        {rejectedSent ? <CheckCheck size={14} /> : <XCircle size={14} />}
+        {emailSending ? 'Sending…' : rejectedSent ? 'Rejected mail sent ✓' : 'Send Rejected Email'}
       </DropdownItem>
       <div style={{ height: 1, background: '#F1F5F9', margin: '4px 0' }} />
       <DropdownItem onClick={onDelete} tone="rose">
@@ -756,7 +888,7 @@ function DropdownItem({ children, onClick, tone }) {
   );
 }
 
-function ViewCandidateModal({ candidate: c, status, onClose, onShortlist, onDelete, onDownload }) {
+function ViewCandidateModal({ candidate: c, status, onClose, onShortlist, onDelete, onDownload, onSendSelected, onSendRejected, emailSending, emailSent }) {
   const name = c.candidateId?.name || 'Unknown';
   const email = c.candidateId?.email || '—';
   const score = c.score || 0;
@@ -766,6 +898,11 @@ function ViewCandidateModal({ candidate: c, status, onClose, onShortlist, onDele
   const correct = (c.questions || []).filter((q) => (c.answers || {})[q.id] === q.correctAnswer).length;
   const accuracy = total ? Math.round((correct / total) * 100) : 0;
   const shortlisted = status === 'shortlisted';
+
+  const selectedSending = emailSending?.[`${c._id}_selected`];
+  const rejectedSending = emailSending?.[`${c._id}_rejected`];
+  const selectedDone = emailSent?.[`${c._id}_selected`];
+  const rejectedDone = emailSent?.[`${c._id}_rejected`];
 
   return (
     <div
@@ -842,6 +979,46 @@ function ViewCandidateModal({ candidate: c, status, onClose, onShortlist, onDele
               )}
             </div>
           )}
+
+          {/* Email Actions Panel */}
+          <div className="panel" style={{ padding: 16, marginBottom: 20, background: '#F8FAFC' }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+              📧 Send Decision Email
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={!selectedSending && !selectedDone ? onSendSelected : undefined}
+                disabled={selectedSending || selectedDone}
+                style={{
+                  flex: 1, padding: '10px 16px', borderRadius: 10, border: 'none',
+                  background: selectedDone ? '#D1FAE5' : 'linear-gradient(135deg, #059669, #10B981)',
+                  color: selectedDone ? '#047857' : '#FFFFFF',
+                  fontWeight: 700, fontSize: 13, cursor: selectedDone ? 'default' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  opacity: selectedSending ? 0.7 : 1,
+                  transition: 'all 0.2s',
+                }}
+              >
+                {selectedDone ? <><CheckCheck size={14} /> Selected Mail Sent</> : selectedSending ? 'Sending…' : <><Send size={14} /> Send Selected</>}
+              </button>
+              <button
+                onClick={!rejectedSending && !rejectedDone ? onSendRejected : undefined}
+                disabled={rejectedSending || rejectedDone}
+                style={{
+                  flex: 1, padding: '10px 16px', borderRadius: 10,
+                  border: rejectedDone ? '1px solid #FECDD3' : '1px solid #E2E8F0',
+                  background: rejectedDone ? '#FFF1F2' : '#FFFFFF',
+                  color: rejectedDone ? '#BE123C' : '#334155',
+                  fontWeight: 700, fontSize: 13, cursor: rejectedDone ? 'default' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  opacity: rejectedSending ? 0.7 : 1,
+                  transition: 'all 0.2s',
+                }}
+              >
+                {rejectedDone ? <><CheckCheck size={14} /> Rejected Mail Sent</> : rejectedSending ? 'Sending…' : <><XCircle size={14} /> Send Rejected</>}
+              </button>
+            </div>
+          </div>
 
           {/* Video Recordings */}
           {(c.videoUrl || c.screenUrl) && (

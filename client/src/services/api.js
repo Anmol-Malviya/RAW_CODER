@@ -176,4 +176,15 @@ export const updateSetting = async (key, value) => {
   return response.data;
 };
 
+// Email
+export const sendCandidateEmail = async (candidateEmail, candidateName, jobTitle, type) => {
+  const response = await api.post('/email/send', { candidateEmail, candidateName, jobTitle, type });
+  return response.data;
+};
+
+export const sendBulkCandidateEmails = async (candidates, type) => {
+  const response = await api.post('/email/bulk-send', { candidates, type });
+  return response.data;
+};
+
 export default api;

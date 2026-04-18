@@ -8,6 +8,7 @@ import { voiceChat } from '../controllers/voiceController.js';
 import { getQuestions, createQuestion, deleteQuestion } from '../controllers/questionController.js';
 import { getDashboardAnalytics } from '../controllers/analyticsController.js';
 import { getSettings, updateSetting } from '../controllers/settingController.js';
+import { sendCandidateEmail, sendBulkEmails } from '../controllers/emailController.js';
 
 
 const router = Router();
@@ -51,6 +52,10 @@ router.get('/analytics', requireAuth, requireAdmin, getDashboardAnalytics);
 // Settings Routes
 router.get('/settings', requireAuth, requireAdmin, getSettings);
 router.post('/settings', requireAuth, requireAdmin, updateSetting);
+
+// Email Routes
+router.post('/email/send', requireAuth, requireAdmin, sendCandidateEmail);
+router.post('/email/bulk-send', requireAuth, requireAdmin, sendBulkEmails);
 
 // Health check
 router.get('/health', (req, res) => {
