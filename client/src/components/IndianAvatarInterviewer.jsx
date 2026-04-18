@@ -1,144 +1,63 @@
 /**
- * IndianAvatarInterviewer.jsx  — v3.0 Ultra-Realistic Photo Edition
+ * IndianAvatarInterviewer.jsx  — v4.0 Frame Sequence Edition
  * ─────────────────────────────────────────────────────────────────────────────
- * Photo-quality Indian female interviewer avatar system.
+ * Plays through 64 sequential PNG frames (exported from a GIF) for a
+ * smooth, realistic speaking animation.
  *
  * Architecture:
- *  - 4 pre-generated photorealistic images (one per mouth state)
- *  - Smooth cross-fade transition between states via CSS opacity layering
- *  - Blink animation via CSS keyframes on a dark overlay rect
- *  - Subtle head-bob via CSS transform
- *  - Phoneme → mouth-state mapping
- *  - Animated pulse ring while speaking
- *
- * Mouth states (images):
- *  closed  → neutral smile
- *  open    → mid-speech, teeth slightly visible
- *  wide    → wide open speech
- *  round   → O-shape lips
- *
- * Future scalability:
- *  — Swap static images for Azure TTS viseme frames (60fps)
- *  — Use WebGL shader blending for real-time morph between states
- *  — Live2D rigging overlay on top of photo texture
+ *  - 64 frames served from /public/avatar_seq/ezgif-frame-001.png … 064.png
+ *  - Idle  → frozen on frame 001 (neutral)
+ *  - Speaking → cycles through all frames at ~25fps (40ms/frame)
+ *  - Blink shimmer / speaking glow via CSS box-shadow
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-// ── Letter → Viseme State Mapping (7 Frames) ──────────────────────
-const VISEME_MAP = {
-  a: 'open', e: 'wide', i: 'wide', o: 'round', u: 'pucker',
-  c: 'teeth', d: 'teeth', g: 'teeth', k: 'teeth', n: 'teeth', s: 'teeth', t: 'teeth', x: 'teeth', z: 'teeth',
-  f: 'parted', v: 'parted', h: 'parted',
-  m: 'closed', b: 'closed', p: 'closed',
-  w: 'pucker', q: 'pucker',
-  j: 'teeth', r: 'round', l: 'teeth', y: 'wide'
-};
+// Total number of frames available
+const TOTAL_FRAMES = 64;
 
-// Returns an array of frames representing the syllables of the word
-function detectVisemeSequence(word = '') {
-  const letters = word.toLowerCase().replace(/[^a-z]/g, '');
-  if (!letters) return ['closed', 'parted'];
-  
-  const seq = [];
-  let last = '';
-  // Compress consecutive identical letters/frames
-  for (const ch of letters) {
-    const frame = VISEME_MAP[ch] || 'parted';
-    if (frame !== last) {
-      seq.push(frame);
-      last = frame;
-    }
-  }
-  // Ensure we minimum have some frames and end on a relaxed state
-  if (seq.length === 1) seq.push('parted');
-  return seq;
-}
+// Build the frame path list (001 → 064)
+const FRAMES = Array.from({ length: TOTAL_FRAMES }, (_, i) => {
+  const n = String(i + 1).padStart(3, '0');
+  return `/avatar_seq/ezgif-frame-${n}.png`;
+});
 
-// ── Image paths (served from /public/avatar/) ─────────────────────
-const AVATAR_IMGS = {
-  closed: '/avatar/mouth_closed.png',
-  open:   '/avatar/mouth_open.png',
-  wide:   '/avatar/mouth_wide.png',
-  round:  '/avatar/mouth_round.png',
-  teeth:  '/avatar/mouth_teeth.png',
-  pucker: '/avatar/mouth_pucker.png',
-  parted: '/avatar/mouth_parted.png',
-};
-
-const preloadImages = () => {
-  Object.values(AVATAR_IMGS).forEach(src => {
-    const img = new Image();
+// Preload all frames up-front to avoid flicker
+const preloadAll = () => {
+  FRAMES.forEach(src => {
+    const img = new window.Image();
     img.src = src;
   });
 };
 
 export default function IndianAvatarInterviewer({
   isSpeaking  = false,
-  currentWord = '',
+  currentWord = '',   // kept for API compatibility (unused in frame mode)
   size        = 220,
 }) {
-  const [mouthState, setMouthState] = useState('closed');
-  const [loaded,     setLoaded]     = useState(false);
-  const [loadCount,  setLoadCount]  = useState(0);
+  const [frameIdx, setFrameIdx]   = useState(0);   // current frame index (0-based)
+  const [loaded,   setLoaded]     = useState(false);
+  const timerRef                  = useRef(null);
 
-  const mouthRef    = useRef(null);
-  const totalImages = Object.keys(AVATAR_IMGS).length;
+  // Preload on first mount
+  useEffect(() => { preloadAll(); }, []);
 
-  useEffect(() => { preloadImages(); }, []);
-
-  const handleImageLoad = useCallback(() => {
-    setLoadCount(c => {
-      const next = c + 1;
-      if (next >= totalImages) setLoaded(true);
-      return next;
-    });
-  }, [totalImages]);
-
-  // ── Lip sync: 7-frame multi-state merging ───────────────────────
+  // ── Frame animation loop ──────────────────────────────────────────
   useEffect(() => {
-    if (!isSpeaking) {
-      clearTimeout(mouthRef.current);
-      setMouthState('closed');
-      return;
-    }
+    clearInterval(timerRef.current);
 
-    if (currentWord) {
-      // 1. Convert word to a sequence of visual frames
-      const sequence = detectVisemeSequence(currentWord);
-      let step = 0;
-      
-      // 2. Play through the frames at ~70ms per frame
-      const playSequence = () => {
-        if (step < sequence.length) {
-          setMouthState(sequence[step]);
-          step++;
-          mouthRef.current = setTimeout(playSequence, 70);
-        } else {
-          // 3. Relax slightly when word finishes
-          setMouthState('parted');
-          mouthRef.current = setTimeout(() => setMouthState('closed'), 100);
-        }
-      };
-      clearTimeout(mouthRef.current);
-      playSequence();
-      
+    if (isSpeaking) {
+      // Cycle through all 64 frames at ~25 fps
+      timerRef.current = setInterval(() => {
+        setFrameIdx(prev => (prev + 1) % TOTAL_FRAMES);
+      }, 40);
     } else {
-      // Fallback breathing cycle if talking but word is missed
-      const fallbackSeq = ['parted', 'teeth', 'closed', 'open', 'parted'];
-      let fStep = 0;
-      const cycle = () => {
-        setMouthState(fallbackSeq[fStep % fallbackSeq.length]);
-        fStep++;
-        mouthRef.current = setTimeout(cycle, 150 + Math.random() * 50);
-      };
-      clearTimeout(mouthRef.current);
-      cycle();
+      // Return to neutral (frame 0)
+      setFrameIdx(0);
     }
-    
-    return () => clearTimeout(mouthRef.current);
-  }, [isSpeaking, currentWord]);
 
+    return () => clearInterval(timerRef.current);
+  }, [isSpeaking]);
 
   const height = size * 1.35;
   const radius = size * 0.08;
@@ -168,6 +87,7 @@ export default function IndianAvatarInterviewer({
           background:   '#d4c5b0',
         }}
       >
+        {/* Loading shimmer */}
         {!loaded && (
           <div
             style={{
@@ -185,31 +105,29 @@ export default function IndianAvatarInterviewer({
               letterSpacing:  '0.05em',
             }}
           >
-            Loading...
+            Loading…
           </div>
         )}
 
-        {/* ── 4 Layers rendered exactly on top of each other ── */}
-        {Object.entries(AVATAR_IMGS).map(([state, src]) => (
-          <img
-            key={state}
-            src={src}
-            alt={`Avatar ${state}`}
-            onLoad={handleImageLoad}
-            style={{
-              position:  'absolute',
-              inset:     0,
-              width:     '100%',
-              height:    '100%',
-              objectFit: 'cover',
-              objectPosition: 'center top',
-              opacity:   mouthState === state ? 1 : 0,
-              // Extremely quick 60ms crossfade for seamless lip blending
-              transition: 'opacity 0.06s ease-in-out',
-            }}
-          />
-        ))}
+        {/* Current frame */}
+        <img
+          key={FRAMES[frameIdx]}
+          src={FRAMES[frameIdx]}
+          alt="Interviewer"
+          onLoad={() => setLoaded(true)}
+          style={{
+            position:       'absolute',
+            inset:          0,
+            width:          '100%',
+            height:         '100%',
+            objectFit:      'cover',
+            objectPosition: 'center top',
+            opacity:        loaded ? 1 : 0,
+            transition:     'opacity 0.15s ease',
+          }}
+        />
 
+        {/* Subtle vignette */}
         <div
           style={{
             position:   'absolute',
