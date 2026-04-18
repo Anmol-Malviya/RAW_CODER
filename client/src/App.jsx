@@ -18,6 +18,7 @@ import VoiceInterviewPage from './pages/VoiceInterviewPage';
 import QuestionBankPage from './pages/QuestionBankPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
+import AdminSessionsPage from './pages/AdminSessionsPage';
 // import { AdminSettings } from './pages/PlaceholderPages'; // No longer needed
 
 function ProtectedRoute({ children, role }) {
@@ -63,6 +64,7 @@ function AppRoutes() {
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/live" element={<AdminLiveMonitor />} />
         <Route path="/admin/questions" element={<QuestionBankPage />} />
+        <Route path="/admin/sessions" element={<AdminSessionsPage />} />
         <Route path="/admin/analytics" element={<AnalyticsPage />} />
         <Route path="/admin/settings" element={<SettingsPage />} />
       </Route>

@@ -105,6 +105,11 @@ export const getUserSessions = async () => {
   return response.data;
 };
 
+export const fetchAllSessions = async () => {
+  const response = await api.get('/sessions/all');
+  return response.data;
+};
+
 export const uploadRecording = async (sessionId, videoBlob) => {
   const formData = new FormData();
   formData.append('sessionId', sessionId);

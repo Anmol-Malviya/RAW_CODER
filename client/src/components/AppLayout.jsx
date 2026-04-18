@@ -13,6 +13,7 @@ const adminNav = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, match: '/admin' },
   { label: 'Live Monitoring', href: '/admin/live', icon: Video, match: '/admin/live' },
   { label: 'Question Bank', href: '/admin/questions', icon: Database, match: '/admin/questions' },
+  { label: 'Sessions', href: '/admin/sessions', icon: BookOpen, match: '/admin/sessions' },
   { label: 'Analytics', href: '/admin/analytics', icon: BarChart3, match: '/admin/analytics' },
   { label: 'Settings', href: '/admin/settings', icon: Settings, match: '/admin/settings' },
 ];
@@ -25,6 +26,7 @@ const titleMap = [
   { match: '/coding', title: 'Coding test' },
   { match: '/admin', title: 'Admin monitoring' },
   { match: '/admin/live', title: 'Live Monitoring' },
+  { match: '/admin/sessions', title: 'Interview Sessions' },
 ];
 
 function getPageTitle(pathname) {

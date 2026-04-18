@@ -261,6 +261,23 @@ export const getUserSessions = async (req, res) => {
   }
 };
 
+export const getAllAdminSessions = async (req, res) => {
+  try {
+    if (isMockMode()) {
+       const mock = [
+         { _id: 's1', candidateId: { name: 'Mock User' }, jobRole: 'Frontend Dev', score: 8, createdAt: new Date(), sessionType: 'live' }
+       ];
+       return res.json(mock);
+    }
+    const sessions = await Session.find({})
+                                  .populate('candidateId', 'name email')
+                                  .sort({ createdAt: -1 });
+    res.json(sessions);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch sessions' });
+  }
+};
+
 export const getSession = async (req, res) => {
   try {
     const session = await Session.findById(req.params.id);
