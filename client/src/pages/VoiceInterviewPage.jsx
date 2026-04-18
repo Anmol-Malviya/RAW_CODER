@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Volume2, Loader, RefreshCw } from 'lucide-react';
+import { Mic, Volume2, Loader, RefreshCw, AlertTriangle } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { useAssessment } from '../context/AssessmentContext';
 import { submitAssessment } from '../services/api';
+import '@tensorflow/tfjs';
+import * as cocoSsd from '@tensorflow-models/coco-ssd';
 
 const SILENCE_TIMEOUT = 4000;
 const SILENCE_THRESHOLD = 5;
@@ -31,6 +33,8 @@ export default function VoiceInterviewPage() {
   const [audioLevel, setAudioLevel] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [ready, setReady] = useState(false); // camera/mic ready
+  const [warnings, setWarnings] = useState(0);
+  const [warningMsg, setWarningMsg] = useState('');
 
   // ── Refs ──
   const recognitionRef = useRef(null);
@@ -49,6 +53,14 @@ export default function VoiceInterviewPage() {
   const answersRef = useRef({});
   const questionsRef = useRef([]);
   const resetTimerRef = useRef(null);
+  const modelRef = useRef(null);
+
+  // Load Model
+  useEffect(() => {
+    cocoSsd.load().then(model => {
+      modelRef.current = model;
+    }).catch(console.error);
+  }, []);
 
   // Sync refs
   useEffect(() => { synthRef.current = window.speechSynthesis; }, []);
@@ -226,6 +238,40 @@ export default function VoiceInterviewPage() {
   useEffect(() => {
     resetTimerRef.current = startSilenceTimer;
   }, [startSilenceTimer]);
+
+  // ── Anti-Cheat Detection ──
+  const runDetection = useCallback(async () => {
+    if (!modelRef.current || !videoRef.current || videoRef.current.readyState !== 4) return;
+    try {
+      const predictions = await modelRef.current.detect(videoRef.current);
+      let personCount = 0;
+      let hasPhone = false;
+      
+      predictions.forEach(p => {
+        if (p.class === 'person') personCount++;
+        if (p.class === 'cell phone') hasPhone = true;
+      });
+
+      let msg = '';
+      if (personCount === 0) msg = '⚠️ FACE NOT DETECTED (Please look at camera)';
+      else if (personCount > 1) msg = '⚠️ MULTIPLE PERSONS DETECTED';
+      else if (hasPhone) msg = '⚠️ PHONE/DEVICE DETECTED';
+
+      if (msg) {
+         setWarningMsg(msg);
+         setWarnings(prev => prev + 1);
+      } else {
+         setWarningMsg('');
+      }
+    } catch (e) {
+      console.warn('Detection skipped');
+    }
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(runDetection, 2000); // Check every 2 seconds
+    return () => clearInterval(id);
+  }, [runDetection]);
 
   // ── Submit Current Answer ──
   const submitCurrentAnswer = useCallback(() => {
@@ -475,7 +521,15 @@ export default function VoiceInterviewPage() {
           {/* Camera */}
           <div style={{ background: '#0F172A', borderRadius: 18, overflow: 'hidden', aspectRatio: '4/3', border: '2px solid #E2E8F0', position: 'relative', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
             <video ref={videoRef} autoPlay muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)', display: 'block' }} />
-            <div style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(15,23,42,0.7)', backdropFilter: 'blur(4px)', borderRadius: 6, padding: '3px 9px', fontSize: 10, color: 'white', fontWeight: 700, letterSpacing: '0.04em' }}>YOU</div>
+            
+            {/* Warning Overlay */}
+            {warningMsg && (
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, background: 'rgba(239, 68, 68, 0.95)', color: 'white', fontSize: 11, fontWeight: 700, padding: '8px 6px', textAlign: 'center', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>
+                   <AlertTriangle size={14} /> {warningMsg}
+                </div>
+            )}
+
+            <div style={{ position: 'absolute', top: warningMsg ? 40 : 10, left: 10, background: 'rgba(15,23,42,0.7)', backdropFilter: 'blur(4px)', borderRadius: 6, padding: '3px 9px', fontSize: 10, color: 'white', fontWeight: 700, letterSpacing: '0.04em', transition: 'top 0.3s' }}>YOU</div>
             <div style={{ position: 'absolute', bottom: 10, right: 10, display: 'flex', alignItems: 'center', gap: 5, background: (phase === PHASES.LISTENING || phase === PHASES.COUNTDOWN) ? 'rgba(16,185,129,0.9)' : 'rgba(15,23,42,0.6)', borderRadius: 6, padding: '4px 9px', transition: 'background 0.3s' }}>
               {(phase === PHASES.LISTENING || phase === PHASES.COUNTDOWN) ? <><div style={{ width: 5, height: 5, borderRadius: '50%', background: 'white', animation: 'blink 1s infinite' }} /><span style={{ fontSize: 10, color: 'white', fontWeight: 700 }}>MIC ON</span></> : <><Mic size={10} color="#94A3B8" /><span style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600 }}>MIC OFF</span></>}
             </div>
