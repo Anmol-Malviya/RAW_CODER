@@ -31,6 +31,7 @@ export default function JobApplyPage() {
   const [dragOver, setDragOver] = useState(false);
   const navigate = useNavigate();
   const { dispatch } = useAssessment();
+  const [interviewMode, setInterviewMode] = useState('voice'); // 'voice' | 'mcq'
 
   useEffect(() => {
     if (job) return;
@@ -92,7 +93,7 @@ export default function JobApplyPage() {
           hasCodingRound: job?.hasCodingRound || false,
         },
       });
-      navigate('/assessment');
+      navigate(interviewMode === 'voice' ? '/voice-interview' : '/assessment');
     } catch (err) {
       console.error('Generation error:', err);
       setError(parseError(err) || 'Failed to generate assessment. Please try again.');
@@ -244,13 +245,38 @@ export default function JobApplyPage() {
           </div>
         )}
 
+        {/* Interview Mode Selector */}
+        <div style={{ marginTop: 20, background: '#F8FAFC', borderRadius: 12, border: '1px solid #E2E8F0', padding: 16 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', marginBottom: 12 }}>Select Interview Mode</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <button
+              type="button"
+              onClick={() => setInterviewMode('voice')}
+              style={{ padding: '14px 16px', borderRadius: 10, border: `2px solid ${interviewMode === 'voice' ? '#4F46E5' : '#E2E8F0'}`, background: interviewMode === 'voice' ? '#EEF2FF' : 'white', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+            >
+              <div style={{ fontSize: 22, marginBottom: 6 }}>🎙️</div>
+              <p style={{ fontSize: 14, fontWeight: 700, color: interviewMode === 'voice' ? '#4338CA' : '#0F172A', margin: 0 }}>Voice Interview</p>
+              <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0' }}>AI speaks questions — you answer by talking</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setInterviewMode('mcq')}
+              style={{ padding: '14px 16px', borderRadius: 10, border: `2px solid ${interviewMode === 'mcq' ? '#4F46E5' : '#E2E8F0'}`, background: interviewMode === 'mcq' ? '#EEF2FF' : 'white', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+            >
+              <div style={{ fontSize: 22, marginBottom: 6 }}>📝</div>
+              <p style={{ fontSize: 14, fontWeight: 700, color: interviewMode === 'mcq' ? '#4338CA' : '#0F172A', margin: 0 }}>MCQ / Written</p>
+              <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0' }}>Choose correct answers from options</p>
+            </button>
+          </div>
+        </div>
+
         <button
           type="submit"
           disabled={!file || generating || !job}
           className="btn-primary"
           style={{ width: '100%', height: 44, marginTop: 20 }}
         >
-          {generating ? 'Starting assessment…' : 'Start AI Assessment'}
+          {generating ? 'Starting assessment…' : interviewMode === 'voice' ? '🎙️ Start Voice Interview' : '📝 Start MCQ Assessment'}
         </button>
       </form>
 

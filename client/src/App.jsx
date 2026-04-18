@@ -14,6 +14,7 @@ import CandidateProfile from './pages/CandidateProfile';
 import CandidateSupport from './pages/CandidateSupport';
 import CandidatePractice from './pages/CandidatePractice';
 import AdminLiveMonitor from './pages/AdminLiveMonitor';
+import VoiceInterviewPage from './pages/VoiceInterviewPage';
 import { AdminSettings, AdminAnalytics, AdminQuestions } from './pages/PlaceholderPages';
 
 function ProtectedRoute({ children, role }) {
@@ -52,6 +53,7 @@ function AppRoutes() {
         <Route path="/candidate/practice" element={<CandidatePractice />} />
         <Route path="/candidate/profile" element={<CandidateProfile />} />
         <Route path="/candidate/support" element={<CandidateSupport />} />
+        <Route path="/voice-interview" element={<VoiceInterviewPage />} />
       </Route>
 
       <Route element={<ProtectedRoute role="admin"><AuthenticatedLayout /></ProtectedRoute>}>
