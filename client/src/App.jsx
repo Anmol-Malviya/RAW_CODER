@@ -22,6 +22,7 @@ import SettingsPage from './pages/SettingsPage';
 import AdminSessionsPage from './pages/AdminSessionsPage';
 import JobManagementPage from './pages/JobManagementPage';
 import CandidateATSChecker from './pages/CandidateATSChecker';
+import SessionCandidatesPage from './pages/SessionCandidatesPage';
 
 function ProtectedRoute({ children, role }) {
   const { user } = useAuth();
@@ -69,6 +70,7 @@ function AppRoutes() {
 
       <Route element={<ProtectedRoute role="admin"><AuthenticatedLayout /></ProtectedRoute>}>
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/candidates/:id" element={<SessionCandidatesPage />} />
         <Route path="/admin/roles" element={<JobManagementPage />} />
         <Route path="/admin/live" element={<AdminLiveMonitor />} />
         <Route path="/admin/questions" element={<QuestionBankPage />} />
