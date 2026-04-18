@@ -70,7 +70,7 @@ export default function AdminLiveMonitor() {
   const socketRef = useRef(null);
 
   useEffect(() => {
-    socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
+    socketRef.current = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000', { transports: ['websocket'] });
     
     socketRef.current.on('live_frame', (data) => {
       setLiveStreams(prev => ({

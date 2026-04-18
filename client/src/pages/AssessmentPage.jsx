@@ -115,7 +115,7 @@ export default function AssessmentPage() {
 
   useEffect(() => {
     let stream;
-    socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
+    socketRef.current = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000', { transports: ['websocket'] });
     
     const enable = async () => {
       try {

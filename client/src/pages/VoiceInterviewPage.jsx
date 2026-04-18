@@ -117,7 +117,15 @@ export default function VoiceInterviewPage() {
             canvas.width = vid.videoWidth;
             canvas.height = vid.videoHeight;
             ctx2d.drawImage(vid, 0, 0);
-            socket.emit('candidate_frame', { candidateId: sessionId, name: 'Candidate', role: jobRole || 'Interview', frame: canvas.toDataURL('image/jpeg', 0.4) });
+            socket.emit('candidate_frame', { 
+              candidateId: sessionId, 
+              name: 'Candidate User', 
+              role: jobRole || 'Voice Interview', 
+              flags: warnings,
+              status: warnings > 5 ? 'critical' : warnings > 0 ? 'warning' : 'clean',
+              duration: formatTime(elapsed),
+              frame: canvas.toDataURL('image/jpeg', 0.4) 
+            });
           }
         }, 600);
 
