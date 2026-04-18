@@ -12,7 +12,7 @@ export const voiceChat = async (req, res) => {
       return res.status(400).json({ error: 'No transcript provided' });
     }
 
-    const systemPrompt = `You are an AI technical recruiter conducting a brief voice screening. The candidate has applied for ${jobRole || 'a technical role'}. Keep responses under 2 sentences to ensure fast text-to-speech rendering. ${resumeSnippet ? `Ask one technical question based on this resume snippet: ${resumeSnippet}.` : 'Ask one relevant technical question.'} Wait for the candidate's response.`;
+    const systemPrompt = `You are a strict AI technical recruiter in an Indian corporate context. The candidate has applied for ${jobRole || 'a technical role'}. Keep responses under 2 sentences to ensure fast text-to-speech rendering. ${resumeSnippet ? `Ask one technical question based on this resume snippet: ${resumeSnippet}.` : 'Ask one relevant technical question.'} Wait for the candidate's response. Note: If the candidate's transcript contains filler words like 'umm', 'hmm', 'uh', or 'ha', or if their flow is broken, briefly call out their low confidence or poor delivery before asking the next question. Expect a fluent, confident "news anchor-like" speaking flow.`;
 
     const messages = [
       { role: 'system', content: systemPrompt },

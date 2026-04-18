@@ -152,6 +152,14 @@ export default function VoiceInterviewPage() {
       if (fin) {
         transcriptRef.current += fin + ' ';
         setTranscript(p => p + fin + ' ');
+        
+        // Filler Word Detection (Low Confidence & Fluency Check)
+        const fillerMatch = fin.match(/\b(um+|uh+|hm+|hmm+|ah+|ha+|like)\b/gi);
+        if (fillerMatch && fillerMatch.length > 0) {
+           setWarningMsg('⚠️ LOW CONFIDENCE: Avoid filler words (' + fillerMatch[0].toLowerCase() + '). Keep a fluent, anchor-like flow!');
+           setWarnings(prev => prev + 1);
+           setTimeout(() => setWarningMsg(''), 3500);
+        }
       }
       setInterimText(tmp);
       
