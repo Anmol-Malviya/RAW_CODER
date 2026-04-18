@@ -219,18 +219,19 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+      {/* Premium Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32, padding: '32px 40px', background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', borderRadius: 24, boxShadow: '0 20px 40px -12px rgba(15,23,42,0.4)', color: 'white', flexWrap: 'wrap', gap: 20 }}>
         <div>
-          <h1 style={{ fontSize: 26, fontWeight: 600, color: '#0F172A', letterSpacing: '-0.02em' }}>
-            Admin monitoring
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#818CF8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Overview</p>
+          <h1 style={{ fontSize: 32, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+            Admin Command Center
           </h1>
-          <p style={{ marginTop: 6, fontSize: 14, color: '#64748B' }}>
-            Review candidate assessments, flags, and scores across open roles.
+          <p style={{ marginTop: 8, fontSize: 15, color: '#94A3B8', fontWeight: 500 }}>
+            Monitor live interviews, flags, and system-wide candidate intelligence.
           </p>
         </div>
-        <button onClick={() => setShowNewJobModal(true)} className="btn-primary" style={{ height: 40 }}>
-          <Plus size={14} /> Post new role
+        <button onClick={() => setShowNewJobModal(true)} style={{ height: 44, padding: '0 24px', background: '#6366F1', color: 'white', borderRadius: 12, fontWeight: 700, fontSize: 14, border: 'none', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', boxShadow: '0 8px 16px -4px rgba(99,102,241,0.5)', transition: 'all 0.2s' }} onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 20px -4px rgba(99,102,241,0.6)'; }} onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 8px 16px -4px rgba(99,102,241,0.5)'; }}>
+          <Plus size={18} strokeWidth={2.5} /> Deploy New Role
         </button>
       </div>
 
@@ -243,18 +244,18 @@ export default function AdminDashboard() {
       </div>
 
       {/* Filters bar */}
-      <div className="panel" style={{ padding: 14, marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ padding: '8px 20px', marginBottom: 24, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', background: '#FFFFFF', borderRadius: 999, border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
         <div style={{ position: 'relative', flex: '1 1 240px', minWidth: 220 }}>
-          <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+          <Search size={16} strokeWidth={2.5} style={{ position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or email…"
-            className="input-soft"
-            style={{ paddingLeft: 34 }}
+            placeholder="Search candidates…"
+            style={{ width: '100%', padding: '10px 16px 10px 32px', border: 'none', background: 'transparent', fontSize: 15, fontWeight: 500, color: '#0F172A', outline: 'none' }}
           />
         </div>
+        <div style={{ width: 1, height: 24, background: '#E2E8F0', margin: '0 4px' }} />
         <Select value={selectedJobId} onChange={setSelectedJobId} label="Role">
           <option value="all">All roles</option>
           {jobs.map((j) => <option key={j._id} value={j._id}>{j.title}</option>)}
@@ -278,8 +279,8 @@ export default function AdminDashboard() {
           <option value="month">Last 30 days</option>
         </Select>
         {activeFilterCount > 0 && (
-          <button onClick={resetFilters} className="btn-ghost" style={{ padding: '6px 10px', color: '#4F46E5', fontWeight: 600 }}>
-            <RotateCcw size={12} /> Reset
+          <button onClick={resetFilters} style={{ padding: '8px 16px', background: '#FEF2F2', color: '#DC2626', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#FEE2E2'} onMouseOut={e => e.currentTarget.style.background = '#FEF2F2'}>
+            <RotateCcw size={14} strokeWidth={2.5} /> Reset
           </button>
         )}
       </div>
@@ -293,20 +294,23 @@ export default function AdminDashboard() {
       </div>
 
       {/* Table */}
-      <div className="table-card">
-        {loading ? (
-          <div style={{ padding: 24 }}>
-            {[1, 2, 3, 4].map((i) => <div key={i} className="skeleton" style={{ height: 48, marginBottom: 8 }} />)}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ padding: 56, textAlign: 'center' }}>
-            <Briefcase size={32} style={{ margin: '0 auto 12px', color: '#CBD5E1' }} />
-            <p style={{ fontWeight: 600, color: '#0F172A' }}>No candidates to show</p>
-            <p style={{ marginTop: 4, fontSize: 13, color: '#64748B' }}>
-              {activeFilterCount > 0 ? 'Try adjusting or resetting your filters.' : 'Post a role to get started.'}
-            </p>
-          </div>
-        ) : (
+      <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: '8px', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)' }}>
+        <div style={{ overflow: 'hidden', borderRadius: 16 }}>
+          {loading ? (
+            <div style={{ padding: 24 }}>
+              {[1, 2, 3, 4].map((i) => <div key={i} className="skeleton" style={{ height: 48, marginBottom: 8 }} />)}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div style={{ padding: '80px 20px', textAlign: 'center', background: '#F8FAFC', borderRadius: 16 }}>
+              <div style={{ width: 80, height: 80, margin: '0 auto 20px', background: '#FFFFFF', borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 20px -5px rgba(0,0,0,0.05)' }}>
+                 <Briefcase size={36} color="#94A3B8" />
+              </div>
+              <p style={{ fontSize: 18, fontWeight: 700, color: '#0F172A' }}>No candidates to show</p>
+              <p style={{ marginTop: 8, fontSize: 14, color: '#64748B', maxWidth: 300, margin: '8px auto 0' }}>
+                {activeFilterCount > 0 ? 'Try adjusting or resetting your filters to find candidates.' : 'Get started by deploying your first role.'}
+              </p>
+            </div>
+          ) : (
           <div style={{ overflowX: 'auto', overflowY: 'visible' }}>
             <table className="data-table">
               <thead>
@@ -446,6 +450,7 @@ export default function AdminDashboard() {
             </table>
           </div>
         )}
+        </div>
       </div>
 
       {/* View candidate modal */}
@@ -565,20 +570,20 @@ export default function AdminDashboard() {
 
 function Stat({ label, value, icon, tone }) {
   const tones = {
-    indigo: { bg: '#EEF2FF', color: '#4F46E5' },
-    emerald: { bg: '#ECFDF5', color: '#059669' },
-    rose: { bg: '#FFF1F2', color: '#E11D48' },
-    slate: { bg: '#F1F5F9', color: '#475569' },
+    indigo: { bg: '#EEF2FF', color: '#4F46E5', shadow: 'rgba(79, 70, 229, 0.2)' },
+    emerald: { bg: '#ECFDF5', color: '#059669', shadow: 'rgba(5, 150, 105, 0.2)' },
+    rose: { bg: '#FFF1F2', color: '#E11D48', shadow: 'rgba(225, 29, 72, 0.2)' },
+    slate: { bg: '#F1F5F9', color: '#475569', shadow: 'rgba(71, 85, 105, 0.2)' },
   };
   const t = tones[tone];
   return (
-    <div className="card" style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
-      <div style={{ width: 36, height: 36, borderRadius: 8, background: t.bg, color: t.color, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-        {icon}
+    <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: 20, background: '#FFFFFF', borderRadius: 24, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02)', border: '1px solid #E2E8F0', transition: 'all 0.3s' }} onMouseOver={e => { e.currentTarget.style.boxShadow = `0 16px 32px -8px ${t.shadow}`; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = t.bg; }} onMouseOut={e => { e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.02)'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = '#E2E8F0'; }}>
+      <div style={{ width: 56, height: 56, borderRadius: 16, background: t.bg, color: t.color, display: 'grid', placeItems: 'center', flexShrink: 0, boxShadow: `inset 0 2px 4px ${t.shadow}` }}>
+        <div style={{ transform: 'scale(1.2)' }}>{icon}</div>
       </div>
       <div>
-        <p style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{label}</p>
-        <p style={{ marginTop: 2, fontSize: 22, fontWeight: 600, color: '#0F172A', letterSpacing: '-0.01em' }}>{value}</p>
+        <p style={{ fontSize: 13, color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</p>
+        <p style={{ marginTop: 4, fontSize: 32, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em', lineHeight: 1 }}>{value}</p>
       </div>
     </div>
   );
@@ -590,18 +595,12 @@ function Select({ value, onChange, children, label }) {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="input-soft"
       aria-label={label}
       style={{
-        width: 'auto',
-        minWidth: 150,
-        cursor: 'pointer',
-        paddingRight: 32,
-        borderColor: hasValue ? '#6366F1' : undefined,
-        background: hasValue ? '#EEF2FF' : '#FFFFFF',
-        color: hasValue ? '#4338CA' : '#0F172A',
-        fontWeight: hasValue ? 600 : 400,
+        width: 'auto', minWidth: 140, cursor: 'pointer', padding: '10px 36px 10px 18px', background: hasValue ? '#EFF6FF' : 'transparent', color: hasValue ? '#4F46E5' : '#475569', fontWeight: 600, fontSize: 14, border: `2px solid ${hasValue ? '#4F46E5' : 'transparent'}`, borderRadius: 999, outline: 'none', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='${hasValue? '%234F46E5': '%2364748b'}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 5l3 3 3-3'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', transition: 'all 0.2s'
       }}
+      onMouseOver={e => !hasValue && (e.currentTarget.style.background = '#F8FAFC')}
+      onMouseOut={e => !hasValue && (e.currentTarget.style.background = 'transparent')}
     >
       {children}
     </select>
