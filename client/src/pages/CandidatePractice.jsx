@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Code2, BrainCircuit, Play, CheckCircle2, ChevronRight, Lock } from 'lucide-react';
-
+import { BookOpen, Code2, BrainCircuit, Play, CheckCircle2, ChevronRight, Lock, FileUp, FileText, X, Loader2 } from 'lucide-react';
+import { useAssessment } from '../context/AssessmentContext';
+import { generatePracticeSession } from '../services/api';
 const mockChallenges = [
   { 
     id: 1, 
@@ -77,6 +78,15 @@ const getDifficultyColor = (diff) => {
 export default function CandidatePractice() {
   const [activeTab, setActiveTab] = useState('coding');
   const navigate = useNavigate();
+  const { dispatch } = useAssessment();
+
+  // Custom Test Form State
+  const [file, setFile] = useState(null);
+  const [targetRole, setTargetRole] = useState('');
+  const [interviewMode, setInterviewMode] = useState('mcq');
+  const [dragOver, setDragOver] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState('');
 
   const handleStartChallenge = (challenge) => {
     if (challenge.status === 'locked') return;
@@ -87,6 +97,40 @@ export default function CandidatePractice() {
       } 
     });
   };
+
+  const handleGenerateCustomTest = async (e) => {
+    e.preventDefault();
+    if (!file || !targetRole) {
+      setError('Please provide a resume and target role.');
+      return;
+    }
+
+    setGenerating(true);
+    setError('');
+
+    try {
+      const result = await generatePracticeSession(file, targetRole);
+      
+      dispatch({
+        type: 'INITIALIZE',
+        payload: {
+          sessionId: result.sessionId,
+          questions: result.questions,
+          rawQuestions: result._rawQuestions || [],
+          jobRole: result.jobRole || targetRole,
+          hasCodingRound: false,
+        },
+      });
+      // Navigate to the chosen practice format
+      navigate(interviewMode === 'voice' ? '/voice-interview' : '/assessment');
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || 'Failed to generate test');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const parseError = error ? (typeof error === 'string' ? error : JSON.stringify(error)) : '';
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 0' }}>
@@ -148,7 +192,7 @@ export default function CandidatePractice() {
             onClick={() => setActiveTab('mcq')}
             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 24px', background: activeTab === 'mcq' ? 'white' : 'transparent', border: 'none', borderBottom: activeTab === 'mcq' ? '2px solid #3B82F6' : '2px solid transparent', color: activeTab === 'mcq' ? '#3B82F6' : '#64748B', fontWeight: 600, cursor: 'pointer' }}
           >
-            <BookOpen size={18} /> MCQ Knowledge Tests
+            <BookOpen size={18} /> AI Mock Interviews
           </button>
         </div>
 
@@ -211,21 +255,117 @@ export default function CandidatePractice() {
               })}
             </div>
           ) : (
-            <div style={{ padding: 40, textAlign: 'center' }}>
-              <div style={{ width: 64, height: 64, margin: '0 auto 20px', borderRadius: 32, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <BrainCircuit size={28} color="#3B82F6" />
+            <div style={{ padding: 40 }}>
+              <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                <div style={{ width: 64, height: 64, margin: '0 auto 20px', borderRadius: 32, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <BrainCircuit size={28} color="#3B82F6" />
+                </div>
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: '#1E293B', marginBottom: 8 }}>Generate Custom Practice Interview</h3>
+                <p style={{ color: '#64748B', maxWidth: 450, margin: '0 auto', fontSize: 14 }}>
+                  Upload a sample resume and enter a target role. Our AI will analyze your experience and generate a professional, tailored practice assessment.
+                </p>
               </div>
-              <h3 style={{ fontSize: 18, fontWeight: 600, color: '#1E293B', marginBottom: 8 }}>Generate a custom mock test</h3>
-              <p style={{ color: '#64748B', maxWidth: 400, margin: '0 auto 24px' }}>
-                Upload a sample resume and target role, and our AI will generate a realistic timed test specifically for your revision.
-              </p>
-              <button className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                Configure Custom Test <ChevronRight size={18} />
-              </button>
+
+              <form onSubmit={handleGenerateCustomTest} style={{ maxWidth: 500, margin: '0 auto' }}>
+                <div style={{ marginBottom: 20 }}>
+                  <label className="field-label" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target Role</label>
+                  <input 
+                    type="text" 
+                    value={targetRole}
+                    onChange={(e) => setTargetRole(e.target.value)}
+                    placeholder="e.g. Senior React Developer"
+                    style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid #E2E8F0', background: 'white', fontSize: 15 }}
+                    required
+                  />
+                </div>
+
+                <div style={{ marginBottom: 24 }}>
+                   <label className="field-label" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resume (PDF)</label>
+                   <label
+                    htmlFor="practice-resume"
+                    onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={e => { e.preventDefault(); setDragOver(false); if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); }}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      padding: '30px 20px', borderRadius: 12, border: `2px dashed ${dragOver ? '#3B82F6' : file ? '#93C5FD' : '#E2E8F0'}`,
+                      background: dragOver ? '#EFF6FF' : file ? '#FAFAFA' : '#F8FAFC', cursor: 'pointer', transition: 'all 0.2s'
+                    }}
+                   >
+                     <input type="file" id="practice-resume" accept=".pdf" style={{ display: 'none' }} onChange={e => { if(e.target.files[0]) setFile(e.target.files[0]); }} />
+                     
+                     {file ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#DCFCE7', color: '#16A34A', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                            <FileText size={16} />
+                          </div>
+                          <div style={{ flex: 1, overflow: 'hidden' }}>
+                            <p style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{file.name}</p>
+                            <p style={{ fontSize: 12, color: '#64748B' }}>{(file.size / 1024).toFixed(0)} KB</p>
+                          </div>
+                          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setFile(null); }} className="btn-ghost" style={{ padding: 6 }}><X size={16} /></button>
+                        </div>
+                     ) : (
+                        <>
+                          <div style={{ width: 40, height: 40, borderRadius: 10, background: '#EFF6FF', color: '#3B82F6', display: 'grid', placeItems: 'center', marginBottom: 12 }}>
+                            <FileUp size={20} />
+                          </div>
+                          <p style={{ fontSize: 14, fontWeight: 600, color: '#1E293B' }}>Click or drop resume PDF here</p>
+                        </>
+                     )}
+                   </label>
+                </div>
+
+                <div style={{ marginBottom: 24, background: '#F8FAFC', borderRadius: 12, border: '1px solid #E2E8F0', padding: 16 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Interview Format</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => setInterviewMode('mcq')}
+                      style={{ padding: '12px', borderRadius: 10, border: `2px solid ${interviewMode === 'mcq' ? '#3B82F6' : '#E2E8F0'}`, background: interviewMode === 'mcq' ? '#EFF6FF' : 'white', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+                    >
+                      <div style={{ fontSize: 20, marginBottom: 4 }}>📝</div>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: interviewMode === 'mcq' ? '#1D4ED8' : '#0F172A', margin: 0 }}>Written / MCQ</p>
+                      <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0' }}>Multi-choice format</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInterviewMode('voice')}
+                      style={{ padding: '12px', borderRadius: 10, border: `2px solid ${interviewMode === 'voice' ? '#3B82F6' : '#E2E8F0'}`, background: interviewMode === 'voice' ? '#EFF6FF' : 'white', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+                    >
+                      <div style={{ fontSize: 20, marginBottom: 4 }}>🎙️</div>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: interviewMode === 'voice' ? '#1D4ED8' : '#0F172A', margin: 0 }}>Voice AI Bot</p>
+                      <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0' }}>Real-time voice agent</p>
+                    </button>
+                  </div>
+                </div>
+
+                {parseError && (
+                  <div style={{ padding: '12px 16px', borderRadius: 10, background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', fontSize: 13, marginBottom: 20 }}>
+                    {parseError}
+                  </div>
+                )}
+
+                <button 
+                  type="submit" 
+                  disabled={!file || !targetRole || generating}
+                  className="btn-primary" 
+                  style={{ width: '100%', padding: '14px', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                >
+                  {generating ? (
+                    <><Loader2 size={16} className="spin" /> Generating Assessment...</>
+                  ) : (
+                    <>Generate Test & Start <ChevronRight size={16} /></>
+                  )}
+                </button>
+              </form>
             </div>
           )}
         </div>
       </div>
+
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}.spin{animation:spin 1s linear infinite}`}</style>
+
     </div>
   );
 }

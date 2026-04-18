@@ -3,7 +3,7 @@ import upload from '../middleware/upload.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { register, login, getProfile, updateProfile } from '../controllers/authController.js';
 import { createJob, getJobs, getJobDetails, getJobCandidates, getJobByCode } from '../controllers/jobController.js';
-import { generateMCQ, submitAssessment, getSession, uploadRecording, uploadScreenRecording, getUserSessions } from '../controllers/mcqController.js';
+import { generateMCQ, submitAssessment, getSession, uploadRecording, uploadScreenRecording, getUserSessions, generatePracticeSession } from '../controllers/mcqController.js';
 import { voiceChat } from '../controllers/voiceController.js';
 import { chatWithBot } from '../controllers/chatController.js';
 
@@ -24,6 +24,7 @@ router.get('/jobs/:id/candidates', requireAuth, requireAdmin, getJobCandidates);
 
 // MCQ Routes
 router.post('/generate-mcq', requireAuth, upload.single('resume'), generateMCQ);
+router.post('/generate-practice', requireAuth, upload.single('resume'), generatePracticeSession);
 router.post('/submit-assessment', requireAuth, submitAssessment);
 router.post('/upload-recording', requireAuth, upload.single('video'), uploadRecording);
 router.post('/upload-screen', requireAuth, upload.single('video'), uploadScreenRecording);

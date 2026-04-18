@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, Volume2, Loader, RefreshCw, AlertTriangle, PhoneOff, CheckCircle, ChevronRight, Check } from 'lucide-react';
+import { Mic, MicOff, Volume2, Loader, RefreshCw, AlertTriangle, PhoneOff, CheckCircle, ChevronRight, Check, Bot } from 'lucide-react';
 import { io } from 'socket.io-client';
 import IndianAvatarInterviewer from '../components/IndianAvatarInterviewer';
 import { useAssessment } from '../context/AssessmentContext';

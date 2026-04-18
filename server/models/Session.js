@@ -10,8 +10,9 @@ const questionSchema = new mongoose.Schema({
 
 const sessionSchema = new mongoose.Schema({
   candidateId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  jobId: { type: mongoose.Schema.Types.ObjectId, ref: 'Job', required: true },
+  jobId: { type: mongoose.Schema.Types.ObjectId, ref: 'Job', default: null }, // null for practice sessions
   jobRole: { type: String }, // cached role name
+  sessionType: { type: String, enum: ['practice', 'live'], default: 'live' }, // practice = self-created, live = admin invite
   resumeText: { type: String, required: true },
   questions: [questionSchema],
   answers: {

@@ -96,6 +96,7 @@ export const generateMCQ = async (req, res) => {
         jobRole,
         resumeText,
         questions,
+        sessionType: 'live',
       });
       await session.save();
       sessionId = session._id;
@@ -117,6 +118,80 @@ export const generateMCQ = async (req, res) => {
   } catch (error) {
     console.error('MCQ Generation Error:', error);
     res.status(500).json({ error: error.message || 'Failed to generate questions' });
+  }
+};
+
+// ─── Practice Session (Candidate Self-Created) ─── //
+export const generatePracticeSession = async (req, res) => {
+  try {
+    const { targetRole, topic } = req.body;
+    const pdfFile = req.file;
+
+    if (!pdfFile) return res.status(400).json({ error: 'No PDF resume uploaded' });
+    if (!targetRole) return res.status(400).json({ error: 'Target role is required' });
+
+    const resumeText = await extractTextFromPDF(pdfFile.buffer);
+    if (!resumeText || resumeText.length < 50) {
+      return res.status(400).json({ error: 'Could not extract sufficient text from resume' });
+    }
+
+    const practiceJobRole = targetRole;
+    const practiceContext = topic ? `Topic focus: ${topic}` : '';
+
+    let questions;
+    try {
+      if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY === 'default-key') throw new Error('No API Key');
+      const completion = await groq.chat.completions.create({
+        model: 'openai/gpt-oss-120b',
+        messages: [
+          { role: 'system', content: MCQ_SYSTEM_PROMPT },
+          {
+            role: 'user',
+            content: `Resume Text:\n${resumeText}\n\nTarget Job Role: ${practiceJobRole}\n\n${practiceContext}\n\nThis is a self-directed practice session. Generate relevant interview questions.`,
+          },
+        ],
+        temperature: 0.75,
+        max_tokens: 4000,
+        stream: false,
+        response_format: { type: 'json_object' },
+      });
+      const parsed = JSON.parse(completion.choices[0].message.content);
+      questions = parsed.questions;
+    } catch (err) {
+      console.warn('Practice: Using sample questions (Groq unavailable)');
+      questions = SAMPLE_QUESTIONS;
+    }
+
+    if (!Array.isArray(questions) || questions.length !== 10) {
+      return res.status(500).json({ error: 'Failed to generate 10 practice questions' });
+    }
+
+    let sessionId;
+    try {
+      const session = new Session({
+        candidateId: req.user.id,
+        jobId: null,
+        jobRole: practiceJobRole,
+        resumeText,
+        questions,
+        sessionType: 'practice',
+      });
+      await session.save();
+      sessionId = session._id;
+    } catch (dbErr) {
+      console.warn('Practice DB save failed:', dbErr.message);
+      sessionId = `temp_practice_${Date.now()}`;
+    }
+
+    res.json({
+      sessionId,
+      jobRole: practiceJobRole,
+      questions: questions.map(({ id, question, options }) => ({ id, question, options })),
+      _rawQuestions: questions,
+    });
+  } catch (error) {
+    console.error('Practice Session Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to create practice session' });
   }
 };
 

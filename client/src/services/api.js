@@ -61,6 +61,20 @@ export const generateMCQ = async (file, jobId) => {
   return response.data;
 };
 
+export const generatePracticeSession = async (file, targetRole, topic) => {
+  const formData = new FormData();
+  formData.append('resume', file);
+  formData.append('targetRole', targetRole);
+  if (topic) formData.append('topic', topic);
+
+  const response = await api.post('/generate-practice', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
 export const submitAssessment = async (sessionId, answers, tabSwitchCount, testDurationSeconds) => {
   const response = await api.post('/submit-assessment', {
     sessionId,

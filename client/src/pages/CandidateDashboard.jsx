@@ -9,7 +9,6 @@ export default function CandidateDashboard() {
   const [jobs, setJobs] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('jobs'); // 'jobs' | 'reports'
   const navigate = useNavigate();
 
@@ -32,8 +31,6 @@ export default function CandidateDashboard() {
       setLoading(false);
     }
   };
-
-  const filteredJobs = jobs.filter((job) => job.title.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
@@ -130,69 +127,6 @@ export default function CandidateDashboard() {
               </button>
             </div>
           </div>
-
-          {/* Search & Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-            <div style={{ position: 'relative', width: 400 }}>
-              <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Find a role by title..."
-                style={{ 
-                  width: '100%', padding: '14px 16px 14px 48px', borderRadius: 16,
-                  border: '1px solid #E2E8F0', background: '#FFFFFF', fontSize: 14, fontWeight: 500,
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                }}
-              />
-            </div>
-            <span style={{ fontSize: 13, color: '#64748B', fontWeight: 700 }}>{filteredJobs.length} ROLES AVAILABLE</span>
-          </div>
-
-          {/* Jobs List - Clean & Professional */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 24, marginBottom: 40 }}>
-            {loading ? (
-              [1, 2, 3].map((item) => <div key={item} className="skeleton" style={{ height: 240, borderRadius: 24 }} />)
-            ) : filteredJobs.length === 0 ? (
-              <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '60px 0', background: '#FFFFFF', borderRadius: 32, border: '1px solid #F1F5F9' }}>
-                <p style={{ fontWeight: 700, color: '#64748B' }}>No matching roles found.</p>
-              </div>
-            ) : (
-              filteredJobs.map((job) => (
-                <article key={job._id} style={{ 
-                  padding: 32, background: '#FFFFFF', borderRadius: 32, border: '1px solid #F1F5F9',
-                  display: 'flex', flexDirection: 'column', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
-                }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-4px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 14, background: '#F5F3FF', color: '#6366F1', display: 'grid', placeItems: 'center' }}>
-                      <Briefcase size={20} />
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: '#10B981', background: '#ECFDF5', padding: '4px 12px', borderRadius: 8 }}>NEW OPENING</span>
-                  </div>
-                  <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1A1A1A', marginBottom: 10 }}>{job.title}</h3>
-                  <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.6, marginBottom: 24, flex: 1 }}>{job.description}</p>
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 24, fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>
-                    <Clock size={14} /> Posted {new Date(job.createdAt).toLocaleDateString()}
-                  </div>
-
-                  <button
-                    onClick={() => navigate('/check', { state: { jobData: job } })}
-                    style={{ 
-                      width: '100%', padding: '16px 0', borderRadius: 16, background: '#1A1A1A', color: 'white',
-                      border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s'
-                    }}
-                    onMouseOver={e => e.currentTarget.style.background = '#000000'}
-                    onMouseOut={e => e.currentTarget.style.background = '#1A1A1A'}
-                  >
-                    Apply Now <ArrowRight size={16} />
-                  </button>
-                </article>
-              ))
-            )}
-          </div>
         </>
       ) : (
         /* ─── Reports Section ─── */
@@ -219,12 +153,14 @@ export default function CandidateDashboard() {
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px',
                   background: '#F8FAFC', borderRadius: 20, border: '1px solid #F1F5F9', transition: 'all 0.2s'
                 }} onMouseOver={e => { e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.03)'; }} onMouseOut={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.boxShadow = 'none'; }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                      <div style={{ width: 44, height: 44, borderRadius: 14, background: '#FFFFFF', color: '#10B981', display: 'grid', placeItems: 'center', border: '1px solid #E2E8F0' }}>
                         <CheckCircle size={20} />
                      </div>
                      <div>
-                       <p style={{ fontSize: 15, fontWeight: 800, color: '#1A1A1A' }}>{session.jobId?.title || 'General Assessment'}</p>
+                       <p style={{ fontSize: 15, fontWeight: 800, color: '#1A1A1A' }}>
+                         {session.jobId?.title ? session.jobId.title : (session.jobRole ? `Practice: ${session.jobRole}` : 'General Assessment')}
+                       </p>
                        <p style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginTop: 2 }}>{new Date(session.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} • {session.answers ? Object.keys(session.answers).length : 0} Questions</p>
                      </div>
                   </div>
