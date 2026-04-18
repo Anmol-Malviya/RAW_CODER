@@ -5,7 +5,7 @@ import { io } from 'socket.io-client';
 import { useAssessment } from '../context/AssessmentContext';
 import { submitAssessment } from '../services/api';
 
-const SILENCE_TIMEOUT = 8000;
+const SILENCE_TIMEOUT = 4000;
 const SILENCE_THRESHOLD = 5;
 
 const PHASES = {
@@ -27,7 +27,7 @@ export default function VoiceInterviewPage() {
   const [transcript, setTranscript] = useState('');
   const [interimText, setInterimText] = useState('');
   const [elapsed, setElapsed] = useState(0);
-  const [silenceCountdown, setSilenceCountdown] = useState(8);
+  const [silenceCountdown, setSilenceCountdown] = useState(4);
   const [audioLevel, setAudioLevel] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [ready, setReady] = useState(false); // camera/mic ready
@@ -177,7 +177,7 @@ export default function VoiceInterviewPage() {
         clearInterval(countdownRef.current);
         setPhase(PHASES.LISTENING);
         phaseRef.current = PHASES.LISTENING;
-        setSilenceCountdown(8);
+        setSilenceCountdown(4);
         startSilenceTimer();
       }
 
@@ -190,13 +190,13 @@ export default function VoiceInterviewPage() {
   const startSilenceTimer = useCallback(() => {
     clearTimeout(silenceTimerRef.current);
     clearInterval(countdownRef.current);
-    setSilenceCountdown(8);
+    setSilenceCountdown(4);
 
-    let cd = 8;
+    let cd = 4;
     countdownRef.current = setInterval(() => {
       cd -= 1;
       setSilenceCountdown(cd);
-      if (cd <= 3 && phaseRef.current === PHASES.LISTENING) {
+      if (cd <= 4 && phaseRef.current === PHASES.LISTENING) {
         setPhase(PHASES.COUNTDOWN);
         phaseRef.current = PHASES.COUNTDOWN;
       }
@@ -439,7 +439,7 @@ export default function VoiceInterviewPage() {
           {phase === PHASES.COUNTDOWN && (
             <div style={{ width: '100%', maxWidth: 360, marginTop: 24 }}>
               <div style={{ height: 4, background: '#FEF3C7', borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${(silenceCountdown / 8) * 100}%`, background: '#F59E0B', borderRadius: 99, transition: 'width 1s linear' }} />
+                <div style={{ height: '100%', width: `${(silenceCountdown / 4) * 100}%`, background: '#F59E0B', borderRadius: 99, transition: 'width 1s linear' }} />
               </div>
               <p style={{ textAlign: 'center', fontSize: 12, color: '#92400E', marginTop: 8 }}>Silence detected — speak to continue</p>
             </div>
