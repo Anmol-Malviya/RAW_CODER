@@ -10,6 +10,7 @@ export default function CandidateDashboard() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('jobs'); // 'jobs' | 'reports'
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -89,20 +90,22 @@ export default function CandidateDashboard() {
 
           {/* Join with Code - Premium Panel */}
           <div style={{ 
-            padding: '32px 40px', marginBottom: 48, borderRadius: 32,
-            background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)', 
+            padding: '32px 40px', marginBottom: 40, borderRadius: 32,
+            background: 'linear-gradient(135deg, #4338CA 0%, #6366F1 100%)', 
             boxShadow: '0 20px 40px -12px rgba(99,102,241,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 32, flexWrap: 'wrap',
-            color: 'white'
+            color: 'white', position: 'relative', overflow: 'hidden'
           }}>
-            <div style={{ flex: 1, minWidth: 300 }}>
-              <h3 style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.01em' }}>Have a direct invitation?</h3>
-              <p style={{ marginTop: 8, fontSize: 15, color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>Enter your session code to jump straight into the interview.</p>
+            <div style={{ position: 'absolute', top: -50, right: -50, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+            
+            <div style={{ flex: 1, minWidth: 300, position: 'relative', zIndex: 1 }}>
+              <h3 style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.01em' }}>Have a session code?</h3>
+              <p style={{ marginTop: 8, fontSize: 15, color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>Enter your recruiter-provided code to start your official assessment.</p>
             </div>
-            <div style={{ display: 'flex', gap: 12, flex: '1 1 360px', background: 'rgba(255,255,255,0.1)', padding: 10, borderRadius: 20, backdropFilter: 'blur(10px)' }}>
+            <div style={{ display: 'flex', gap: 12, flex: '1 1 360px', background: 'rgba(255,255,255,0.1)', padding: 10, borderRadius: 20, backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', position: 'relative', zIndex: 1 }}>
               <input
                 type="text"
-                placeholder="ENTER CODE"
+                placeholder="ENTER 6-DIGIT CODE"
                 id="interviewCode"
                 style={{ 
                   flex: 1, background: 'transparent', border: 'none', color: 'white', 
@@ -113,7 +116,7 @@ export default function CandidateDashboard() {
               />
               <button 
                 className="btn-primary" 
-                style={{ background: 'white', color: '#4F46E5', fontWeight: 800, padding: '14px 28px', borderRadius: 14 }}
+                style={{ background: 'white', color: '#4F46E5', fontWeight: 800, padding: '14px 24px', borderRadius: 14, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 onClick={async () => {
                   const code = document.getElementById('interviewCode').value;
                   if (!code) return;
@@ -123,8 +126,98 @@ export default function CandidateDashboard() {
                   } catch (err) { alert(err.response?.data?.error || 'Invalid code'); }
                 }}
               >
-                Start Session <ArrowRight size={18} />
+                Join <ArrowRight size={18} />
               </button>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 40 }}>
+            {/* Jobs List */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0F172A' }}>Available Positions</h2>
+                <div style={{ position: 'relative' }}>
+                  <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                  <input 
+                    type="text" 
+                    placeholder="Search roles..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ padding: '10px 16px 10px 40px', borderRadius: 12, border: '1px solid #E2E8F0', fontSize: 13, minWidth: 240, outline: 'none' }} 
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {loading ? (
+                   [1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 120, borderRadius: 24 }} />)
+                ) : jobs.filter(j => j.title.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
+                  <div style={{ padding: 48, textAlign: 'center', background: '#F8FAFC', borderRadius: 24, border: '1px dashed #E2E8F0' }}>
+                    <p style={{ color: '#64748B', fontWeight: 600 }}>No roles found matching your search.</p>
+                  </div>
+                ) : (
+                  jobs.filter(j => j.title.toLowerCase().includes(searchQuery.toLowerCase())).map(job => (
+                    <div key={job._id} className="card card-hover" style={{ padding: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20 }}>
+                      <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+                        <div style={{ width: 52, height: 52, borderRadius: 16, background: '#F1F5F9', color: '#6366F1', display: 'grid', placeItems: 'center' }}>
+                           <Briefcase size={24} />
+                        </div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0F172A' }}>{job.title}</h3>
+                            <span className="status-pill pill-indigo">{job.difficulty}</span>
+                          </div>
+                          <p style={{ fontSize: 14, color: '#64748B', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                             <Clock size={14} /> {job.interviewType === 'voice' ? 'AI Voice Interview' : 'MCQ Assessment'} • 10-15 mins
+                          </p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => navigate('/apply', { state: { job } })}
+                        className="btn-secondary" 
+                        style={{ padding: '10px 24px', borderRadius: 12, fontWeight: 700 }}
+                      >
+                        Apply Now
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Side Action Panel */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div className="card" style={{ padding: 32, background: 'linear-gradient(to bottom right, #FFFFFF, #F8FAFC)', border: '1px solid #E2E8F0' }}>
+                <div style={{ width: 48, height: 48, borderRadius: 16, background: '#EEF2FF', color: '#6366F1', display: 'grid', placeItems: 'center', marginBottom: 20 }}>
+                  <BarChart3 size={24} />
+                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A' }}>Want to practice?</h3>
+                <p style={{ marginTop: 10, fontSize: 14, color: '#64748B', lineHeight: 1.6 }}>Improve your confidence with unlimited AI-driven practice sessions tailored to your resume.</p>
+                <button 
+                  onClick={() => navigate('/candidate/practice')}
+                  className="btn-primary" 
+                  style={{ width: '100%', marginTop: 24, borderRadius: 14, padding: '14px' }}
+                >
+                  Start Practice
+                </button>
+              </div>
+
+              <div className="card" style={{ padding: 24 }}>
+                <h4 style={{ fontSize: 13, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>Recent Activity</h4>
+                {sessions.slice(0, 3).map(s => (
+                  <div key={s._id} style={{ padding: '12px 0', borderBottom: '1px solid #F1F5F9', lastChild: { borderBottom: 'none' } }}>
+                     <p style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>{s.jobId?.title || s.jobRole}</p>
+                     <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{new Date(s.createdAt).toLocaleDateString()} • {s.score || 0}% Score</p>
+                  </div>
+                ))}
+                <button 
+                  onClick={() => setActiveTab('reports')}
+                  className="btn-ghost" 
+                  style={{ width: '100%', marginTop: 12, fontSize: 13, fontWeight: 700, color: '#6366F1' }}
+                >
+                  View All History
+                </button>
+              </div>
             </div>
           </div>
         </>

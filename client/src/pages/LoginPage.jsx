@@ -48,88 +48,83 @@ export default function LoginPage() {
       {/* LEFT 60% */}
       <div
         style={{
-          flex: '0 0 60%',
-          padding: '64px 72px',
+          flex: '0 0 55%',
+          padding: '64px 80px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           background: '#FFFFFF',
-          borderRight: '1px solid #E2E8F0',
+          borderRight: '1px solid #F1F5F9',
+          position: 'relative',
+          overflow: 'hidden'
         }}
         className="login-left"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 48 }}>
-          <button
-            onClick={() => navigate('/')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            }}
-          >
-            <div className="brand-mark">A</div>
-            <span style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>AI Interviewer</span>
-          </button>
-        </div>
+        <div style={{ position: 'absolute', top: -100, left: -100, width: 400, height: 400, background: 'rgba(99, 102, 241, 0.03)', borderRadius: '50%', blur: '100px' }} />
+        
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 64 }}>
+            <div 
+              onClick={() => navigate('/')}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+            >
+              <div style={{ width: 40, height: 40, bg: '#4F46E5', background: 'linear-gradient(135deg, #6366F1, #4F46E5)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 20 }}>V</div>
+              <span style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>VyorAI</span>
+            </div>
+          </div>
 
-        <button
-          onClick={() => navigate('/')}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 32,
-            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            fontSize: 13, fontWeight: 600, color: '#6366F1',
-            transition: 'color 0.2s',
-          }}
-          onMouseOver={(e) => e.currentTarget.style.color = '#4F46E5'}
-          onMouseOut={(e) => e.currentTarget.style.color = '#6366F1'}
-        >
-          <ArrowLeft size={14} />
-          Back to Home
-        </button>
+          <h1 style={{ fontSize: 48, fontWeight: 900, color: '#0F172A', lineHeight: 1, letterSpacing: '-0.04em', maxWidth: 600 }}>
+            Reinventing recruitment with <span style={{ color: '#4F46E5' }}>AI precision.</span>
+          </h1>
+          <p style={{ marginTop: 24, fontSize: 18, color: '#64748B', maxWidth: 480, lineHeight: 1.6, fontWeight: 500 }}>
+            The world's most advanced platform for automated technical assessments and candidate intelligence.
+          </p>
 
-        <h1 style={{ fontSize: 44, fontWeight: 700, color: '#0F172A', lineHeight: 1.1, letterSpacing: '-0.02em', maxWidth: 640 }}>
-          Hire faster with AI-powered interviews
-        </h1>
-        <p style={{ marginTop: 20, fontSize: 16, color: '#64748B', maxWidth: 520, lineHeight: 1.6 }}>
-          Resume-aware assessments, live proctored interviews, and structured scorecards — all in one clean workspace built for modern hiring teams.
-        </p>
-
-        <div style={{ marginTop: 48, display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 520 }}>
-          <Feature
-            icon={<Sparkles size={16} />}
-            title="AI-generated assessments"
-            body="Questions tailored to the role and candidate's resume in seconds."
-          />
-          <Feature
-            icon={<ShieldCheck size={16} />}
-            title="Proctored interview flow"
-            body="Tab switch alerts and integrity signals to keep the process fair."
-          />
-          <Feature
-            icon={<LineChart size={16} />}
-            title="Structured scorecards"
-            body="Consistent reports so your team can decide faster and fairer."
-          />
+          <div style={{ marginTop: 64, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, maxWidth: 600 }}>
+            <Feature
+              icon={<Sparkles size={18} />}
+              title="Resume Mapping"
+              body="AI analyzes every line of the resume to build the perfect test."
+            />
+            <Feature
+              icon={<ShieldCheck size={18} />}
+              title="Full Integrity"
+              body="Biometric proctoring and tab-switch detection built-in."
+            />
+            <Feature
+              icon={<LineChart size={18} />}
+              title="Smart Insight"
+              body="Predictive performance scores based on spoken answers."
+            />
+            <Feature
+              icon={<ArrowLeft size={18} />}
+              title="Fast Onboarding"
+              body="Get assessments live in minutes, not hours or days."
+            />
+          </div>
         </div>
       </div>
 
-      {/* RIGHT 40% */}
       <div
         style={{
-          flex: '0 0 40%',
+          flex: '1',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 32,
+          padding: 40,
+          background: '#F8FAFC'
         }}
         className="login-right"
       >
-        <div className="card" style={{ width: '100%', maxWidth: 400, padding: 32 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 600, color: '#0F172A', letterSpacing: '-0.01em' }}>
-            {isLogin ? 'Sign in to AI Interviewer' : 'Create your account'}
-          </h2>
-          <p style={{ marginTop: 6, fontSize: 13, color: '#64748B' }}>
-            {isLogin ? 'Welcome back. Please enter your details.' : 'Get started in under a minute.'}
-          </p>
+        <div className="card" style={{ width: '100%', maxWidth: 440, padding: 40, borderRadius: 32, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.05)' }}>
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ fontSize: 28, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.03em' }}>
+              {isLogin ? 'Welcome back' : 'Join VyorAI'}
+            </h2>
+            <p style={{ marginTop: 8, fontSize: 15, color: '#64748B', fontWeight: 500 }}>
+              {isLogin ? 'Enter your credentials to continue.' : 'Start your journey with us today.'}
+            </p>
+          </div>
 
           {error && (
             <div style={{ marginTop: 20, padding: '10px 14px', borderRadius: 8, background: '#FFF1F2', border: '1px solid #FECDD3', color: '#BE123C', fontSize: 13 }}>
@@ -229,14 +224,14 @@ export default function LoginPage() {
 
 function Feature({ icon, title, body }) {
   return (
-    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
       <div
         style={{
-          width: 32,
-          height: 32,
-          borderRadius: 8,
-          background: '#EEF2FF',
-          color: '#4F46E5',
+          width: 40,
+          height: 40,
+          borderRadius: 14,
+          background: '#F5F3FF',
+          color: '#6366F1',
           display: 'grid',
           placeItems: 'center',
           flexShrink: 0,
@@ -245,8 +240,8 @@ function Feature({ icon, title, body }) {
         {icon}
       </div>
       <div>
-        <p style={{ fontSize: 14, fontWeight: 600, color: '#0F172A' }}>{title}</p>
-        <p style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>{body}</p>
+        <p style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>{title}</p>
+        <p style={{ fontSize: 14, color: '#64748B', marginTop: 4, lineHeight: 1.5 }}>{body}</p>
       </div>
     </div>
   );

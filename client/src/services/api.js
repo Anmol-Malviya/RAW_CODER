@@ -90,6 +90,11 @@ export const submitAssessment = async (sessionId, answers, tabSwitchCount, testD
   return response.data;
 };
 
+export const submitFeedback = async (sessionId, rating, comment) => {
+  const response = await api.post('/submit-feedback', { sessionId, rating, comment });
+  return response.data;
+};
+
 export const voiceChat = async (transcript, jobRole, resumeSnippet, history) => {
   const response = await api.post('/voice-chat', {
     transcript,

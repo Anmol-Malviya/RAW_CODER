@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, Phone, Link as LinkIcon, Code, Briefcase, CheckCircle } from 'lucide-react';
+import { User, Mail, Phone, Link as LinkIcon, Code, Briefcase, CheckCircle, Download, Sparkles, Mic } from 'lucide-react';
 import { getProfile, updateProfile, getUserSessions } from '../services/api';
 
 export default function CandidateProfile() {
@@ -103,7 +103,7 @@ export default function CandidateProfile() {
       </head>
       <body>
         <h1>${formData.name}</h1>
-        <div class="subtitle">Email: ${formData.email} ${formData.profile.phone ? '| Phone: '+formData.profile.phone : ''}</div>
+        <div class="subtitle">Email: ${formData.email} ${formData.profile.phone ? `| Phone: ${formData.profile.phone}` : ''}</div>
         
         <div class="links">
           ${formData.profile.github ? `<a href="${formData.profile.github}">GitHub</a>` : ''}
@@ -158,30 +158,82 @@ export default function CandidateProfile() {
   };
 
   if (loading) {
-    return <div style={{ padding: 40, textAlign: 'center', color: '#64748B' }}>Loading profile...</div>;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 20 }}>
+        <div className="skeleton" style={{ width: 100, height: 100, borderRadius: '50%' }} />
+        <div className="skeleton" style={{ width: 200, height: 20 }} />
+        <div className="skeleton" style={{ width: 300, height: 15 }} />
+      </div>
+    );
   }
 
+  const initials = formData.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
+  const totalInterviews = sessions.length;
+  const avgScore = sessions.length > 0 
+    ? Math.round((sessions.reduce((acc, s) => acc + (s.score || 0), 0) / (sessions.length * 10)) * 100) 
+    : 0;
+  const skillsArray = formData.profile.skills ? formData.profile.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const topSkill = skillsArray[0] || 'N/A';
+
+  const achievements = [
+    { title: 'Fast Learner', icon: <Sparkles size={14} />, color: '#6366F1', unlocked: totalInterviews >= 3 },
+    { title: 'High Accuracy', icon: <CheckCircle size={14} />, color: '#10B981', unlocked: avgScore >= 70 },
+    { title: 'Voice Expert', icon: <Mic size={14} />, color: '#F59E0B', unlocked: sessions.some(s => s.interviewType === 'voice') },
+  ];
+
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px 0' }}>
-      {/* Profile Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 24, borderBottom: '1px solid #E2E8F0' }}>
-        <div style={{ width: 48, height: 48, borderRadius: 12, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3B82F6' }}>
-          <User size={24} />
-        </div>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: '#0F172A', marginBottom: 4 }}>My Profile</h1>
-          <p style={{ color: '#64748B' }}>Manage your personal details and view your interview reports.</p>
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 0' }}>
+      {/* Profile Header Block */}
+      <div className="card" style={{ padding: 32, marginBottom: 32, position: 'relative', overflow: 'hidden', border: 'none', background: 'linear-gradient(135deg, #4338CA 0%, #6366F1 100%)', boxShadow: '0 20px 25px -5px rgba(67, 56, 202, 0.2)' }}>
+        {/* Background Decoration */}
+        <div style={{ position: 'absolute', top: -100, right: -100, width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+        <div style={{ position: 'absolute', bottom: -50, left: -50, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: 32, position: 'relative', zIndex: 1 }}>
+          <div style={{ 
+            width: 100, height: 100, borderRadius: 24, 
+            background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 32, fontWeight: 800, color: '#FFFFFF',
+            border: '1px solid rgba(255,255,255,0.2)',
+            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
+          }}>
+            {initials}
+          </div>
+          <div>
+            <h1 style={{ fontSize: 32, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.02em', marginBottom: 8 }}>{formData.name}</h1>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.8)', fontSize: 14 }}>
+                <Mail size={16} /> {formData.email}
+              </div>
+              {formData.profile.phone && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.8)', fontSize: 14 }}>
+                  <Phone size={16} /> {formData.profile.phone}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-        
-        {/* Profile Settings Card */}
-        <div className="card" style={{ padding: 0, borderRadius: 24, border: '1px solid #F1F5F9', boxShadow: '0 4px 24px rgba(0,0,0,0.03)', overflow: 'hidden' }}>
-          {/* Card Header */}
-          <div style={{ padding: '28px 36px 20px', borderBottom: '1px solid #F1F5F9' }}>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: '#1A1A1A', letterSpacing: '-0.02em', marginBottom: 4 }}>Personal Information</h2>
-            <p style={{ fontSize: 14, color: '#94A3B8', fontWeight: 500 }}>Keep your profile up to date for the best interview experience.</p>
+      {/* Stats Quick View */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
+        <StatCard label="Interviews" value={totalInterviews} icon={<Briefcase size={18} />} color="#6366F1" />
+        <StatCard label="Accuracy" value={`${avgScore}%`} icon={<CheckCircle size={18} />} color="#10B981" />
+        <StatCard label="Top Skill" value={topSkill} icon={<Code size={18} />} color="#F59E0B" />
+        <div className="card" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', marginBottom: 6 }}>Resume Health</p>
+          <div style={{ height: 6, background: '#F1F5F9', borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: formData.profile.bio && formData.profile.skills ? '100%' : '50%', background: '#10B981', borderRadius: 10 }} />
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 32 }}>
+        {/* Left: Settings */}
+        <div className="card" style={{ padding: 0 }}>
+          <div style={{ padding: '24px 32px', borderBottom: '1px solid #F1F5F9' }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A' }}>Account Settings</h2>
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -266,15 +318,42 @@ export default function CandidateProfile() {
 
               {/* Skills */}
               <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 8 }}>Top Skills</label>
-                <input type="text" name="skills" value={formData.profile.skills} onChange={handleChange} className="base-input" placeholder="React, Node.js, Python, TypeScript..." />
-                <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 6, fontWeight: 500 }}>Separate skills with commas — these will be highlighted on your profile.</p>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 8 }}>Expertise & Skills</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                  {skillsArray.length > 0 ? skillsArray.map((s, i) => (
+                    <span key={i} style={{ padding: '4px 12px', background: '#F5F3FF', color: '#6366F1', borderRadius: 8, fontSize: 12, fontWeight: 700, border: '1px solid #E0E7FF' }}>{s}</span>
+                  )) : (
+                    <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>No skills added yet</span>
+                  )}
+                </div>
+                <input type="text" name="skills" value={formData.profile.skills} onChange={handleChange} className="base-input" placeholder="e.g. React, Node.js, AWS..." />
+                <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 6, fontWeight: 500 }}>Use commas to separate skills.</p>
+              </div>
+
+              {/* Achievements Mock */}
+              <div>
+                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 12 }}>Candidate Badges</label>
+                 <div style={{ display: 'flex', gap: 12 }}>
+                   {achievements.map((ach, i) => (
+                     <div key={i} title={ach.unlocked ? 'Unlocked!' : 'Keep practicing to unlock'} style={{ 
+                       width: 44, height: 44, borderRadius: 14, 
+                       background: ach.unlocked ? '#F8FAFC' : '#F1F5F9',
+                       border: `2px solid ${ach.unlocked ? ach.color : '#E2E8F0'}`,
+                       color: ach.unlocked ? ach.color : '#94A3B8',
+                       display: 'grid', placeItems: 'center',
+                       opacity: ach.unlocked ? 1 : 0.5,
+                       transition: 'all 0.3s'
+                     }}>
+                       {ach.icon}
+                     </div>
+                   ))}
+                 </div>
               </div>
 
               {/* Bio */}
               <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 8 }}>Professional Bio</label>
-                <textarea name="bio" value={formData.profile.bio} onChange={handleChange} className="base-input" placeholder="Tell us about your experience, strengths, and what you're looking for..." style={{ minHeight: 120 }} />
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 8 }}>About You</label>
+                <textarea name="bio" value={formData.profile.bio} onChange={handleChange} className="base-input" placeholder="Summarize your professional journey..." style={{ minHeight: 120 }} />
               </div>
             </div>
 
@@ -313,36 +392,71 @@ export default function CandidateProfile() {
           </form>
         </div>
 
-        {/* Interview Reports Card */}
-        <div className="card" style={{ padding: 32 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 20, color: '#0F172A' }}>My Interview Reports</h2>
-          {sessions.length === 0 ? (
-            <div style={{ background: '#F8FAFC', padding: 30, borderRadius: 8, textAlign: 'center', color: '#64748B' }}>
-              You haven't completed any interviews yet.
+        {/* Right: Reports & History */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div className="card" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Recent Interviews</h2>
+              <span className="status-pill pill-slate">{sessions.length} sessions</span>
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {sessions.map(session => (
-                <div key={session._id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, border: '1px solid #E2E8F0', borderRadius: 8 }}>
-                  <div>
-                    <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1E293B' }}>{session.jobId?.title || session.jobRole || 'Technical Interview'}</h3>
-                    <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>
-                      Taken on {new Date(session.createdAt).toLocaleDateString()} • Score: {session.score != null ? session.score : 0}/{session.questions?.length || 10}
-                    </p>
+            
+            {sessions.length === 0 ? (
+              <div style={{ background: '#F8FAFC', padding: 24, borderRadius: 12, textAlign: 'center', color: '#64748B', fontSize: 13, border: '1px dashed #E2E8F0' }}>
+                No interview data available yet.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {sessions.map(session => (
+                  <div key={session._id} style={{ 
+                    padding: 16, borderRadius: 12, border: '1px solid #F1F5F9', background: '#FAFBFC',
+                    transition: 'all 0.2s ease'
+                  }} className="card-hover">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1E293B', marginBottom: 4 }}>{session.jobId?.title || session.jobRole || 'Interview'}</h3>
+                        <p style={{ fontSize: 12, color: '#94A3B8' }}>{new Date(session.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: '#4338CA' }}>{`${session.score || 0} / 10`}</span>
+                        <p style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Score</p>
+                      </div>
+                    </div>
+                    
+                    <button 
+                      onClick={() => handleDownloadResume(session)}
+                      className="btn-secondary" 
+                      style={{ width: '100%', padding: '8px', fontSize: 12, fontWeight: 600, background: '#FFFFFF', borderRadius: 8 }}
+                    >
+                      <Download size={14} /> Download Report
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => handleDownloadResume(session)}
-                    className="btn-outline" 
-                    style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600 }}
-                  >
-                    Download Resume PDF
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="card" style={{ padding: 24, background: 'linear-gradient(to bottom right, #FFFFFF, #F8FAFC)' }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>Pro Tip</h2>
+            <p style={{ fontSize: 13, color: '#64748B', lineHeight: 1.6 }}>
+              Keep your bio and top skills updated. AI Interviewer uses this information to personalize your practice sessions and provide more relevant feedback.
+            </p>
+          </div>
         </div>
 
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon, color }) {
+  return (
+    <div className="card" style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{ width: 44, height: 44, borderRadius: 12, background: `${color}10`, color: color, display: 'grid', placeItems: 'center' }}>
+        {icon}
+      </div>
+      <div>
+        <p style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
+        <p style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', marginTop: 2 }}>{value}</p>
       </div>
     </div>
   );

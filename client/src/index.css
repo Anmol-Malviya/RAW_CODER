@@ -608,6 +608,148 @@ textarea.base-input {
   background: #FFF1F2;
 }
 
+/* ---------- Profile Dropdown & Improved Topbar ---------- */
+.profile-container {
+  position: relative;
+}
+
+.profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+
+.profile-trigger:hover {
+  background: #F8FAFC;
+}
+
+.profile-avatar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropdown-arrow {
+  color: #94A3B8;
+  transition: transform 0.2s ease;
+}
+
+.dropdown-arrow.active {
+  transform: rotate(180deg);
+  color: #6366F1;
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 200px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+  z-index: 50;
+  padding: 8px;
+}
+
+.dropdown-header {
+  padding: 12px 16px;
+}
+
+.dropdown-user-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0;
+}
+
+.dropdown-user-email {
+  font-size: 11px;
+  color: #64748B;
+  font-weight: 500;
+  margin: 2px 0 0 0;
+}
+
+.dropdown-stats {
+  display: flex;
+  padding: 12px 16px;
+  background: #F8FAFC;
+}
+
+.dropdown-stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-size: 12px;
+  font-weight: 800;
+  color: #4F46E5;
+  margin-top: 2px;
+}
+
+.dropdown-divider-v {
+  width: 1px;
+  background: #E2E8F0;
+  margin: 0 12px;
+}
+
+.dropdown-menu {
+  padding: 4px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  width: 100%;
+  border-radius: 8px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: #F1F5F9;
+  color: #4F46E5;
+}
+
+.dropdown-item.logout {
+  color: #E11D48;
+}
+
+.dropdown-item.logout:hover {
+  background: #FFF1F2;
+  color: #E11D48;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #F1F5F9;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1040px) {
   .app-shell {

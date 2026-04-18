@@ -326,6 +326,7 @@ export default function AdminDashboard() {
                   <th>Code</th>
                   <th>Time taken</th>
                   <th>Flags</th>
+                  <th>Review</th>
                   <th>Score</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -402,6 +403,25 @@ export default function AdminDashboard() {
                           </span>
                         ) : (
                           <span className="status-pill pill-emerald">Clean</span>
+                        )}
+                      </td>
+                      <td>
+                        {c.feedback ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <div style={{ display: 'flex', gap: 1 }}>
+                              {[1, 2, 3, 4, 5].map(s => (
+                                <Star 
+                                  key={s} 
+                                  size={10} 
+                                  fill={s <= c.feedback.rating ? '#F59E0B' : 'transparent'} 
+                                  color={s <= c.feedback.rating ? '#F59E0B' : '#CBD5E1'} 
+                                />
+                              ))}
+                            </div>
+                            {c.feedback.comment && <p style={{ fontSize: 10, color: '#64748B', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.feedback.comment}</p>}
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: 11, color: '#94A3B8' }}>No review</span>
                         )}
                       </td>
                       <td>
@@ -799,6 +819,29 @@ function ViewCandidateModal({ candidate: c, status, onClose, onShortlist, onDele
             <InfoRow icon={<Clock size={12} />} label="Time taken" value={`${Math.floor(durSec / 60)}m ${durSec % 60}s`} />
             <InfoRow icon={<AlertTriangle size={12} />} label="Flags" value={`${flags} tab switch${flags === 1 ? '' : 'es'}`} />
           </div>
+
+          {c.feedback && (
+            <div style={{ marginBottom: 20, padding: 16, background: '#F8FAFC', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Sparkles size={12} /> Candidate Feedback
+              </p>
+              <div style={{ display: 'flex', gap: 2, marginBottom: 8 }}>
+                {[1, 2, 3, 4, 5].map(s => (
+                  <Star 
+                    key={s} 
+                    size={16} 
+                    fill={s <= c.feedback.rating ? '#F59E0B' : 'transparent'} 
+                    color={s <= c.feedback.rating ? '#F59E0B' : '#CBD5E1'} 
+                  />
+                ))}
+              </div>
+              {c.feedback.comment && (
+                <p style={{ fontSize: 14, color: '#334155', fontStyle: 'italic', lineHeight: 1.5 }}>
+                  "{c.feedback.comment}"
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Video Recordings */}
           {(c.videoUrl || c.screenUrl) && (

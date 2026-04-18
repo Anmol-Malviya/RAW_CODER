@@ -329,3 +329,29 @@ export const uploadScreenRecording = async (req, res) => {
     res.status(500).json({ error: 'Failed to upload screen recording' });
   }
 };
+
+export const submitFeedback = async (req, res) => {
+  try {
+    const { sessionId, rating, comment } = req.body;
+    if (!sessionId || !rating) {
+      return res.status(400).json({ error: 'Session ID and rating are required' });
+    }
+
+    const session = await Session.findById(sessionId);
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    session.feedback = {
+      rating,
+      comment,
+      submittedAt: new Date()
+    };
+
+    await session.save();
+    res.json({ message: 'Feedback submitted successfully' });
+  } catch (error) {
+    console.error('Feedback Submission Error:', error);
+    res.status(500).json({ error: 'Failed to submit feedback' });
+  }
+};

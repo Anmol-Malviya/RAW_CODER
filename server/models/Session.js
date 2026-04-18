@@ -35,6 +35,11 @@ const sessionSchema = new mongoose.Schema({
   testDurationSeconds: { type: Number, default: 0 },
   videoUrl: { type: String, default: null },
   screenUrl: { type: String, default: null },
+  feedback: {
+    rating: { type: Number, min: 1, max: 5 },
+    comment: { type: String },
+    submittedAt: { type: Date }
+  }
 });
 
 const Session = mongoose.model('Session', sessionSchema);
