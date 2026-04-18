@@ -3,7 +3,7 @@ import upload from '../middleware/upload.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { register, login, getProfile, updateProfile } from '../controllers/authController.js';
 import { createJob, getJobs, getJobDetails, getJobCandidates, getJobByCode, updateJobStatus } from '../controllers/jobController.js';
-import { generateMCQ, submitAssessment, getSession, uploadRecording, uploadScreenRecording, getUserSessions, generatePracticeSession, getAllAdminSessions, submitFeedback } from '../controllers/mcqController.js';
+import { generateMCQ, submitAssessment, getSession, uploadRecording, uploadScreenRecording, getUserSessions, generatePracticeSession, getAllAdminSessions, submitFeedback, updateSessionStatus } from '../controllers/mcqController.js';
 import { voiceChat } from '../controllers/voiceController.js';
 import { getQuestions, createQuestion, deleteQuestion } from '../controllers/questionController.js';
 import { getDashboardAnalytics } from '../controllers/analyticsController.js';
@@ -40,6 +40,9 @@ router.post('/submit-feedback', requireAuth, submitFeedback);
 
 // Voice Routes
 router.post('/voice-chat', requireAuth, voiceChat);
+
+// Status Update Route
+router.patch('/session/:sessionId/status', requireAuth, requireAdmin, updateSessionStatus);
 
 // Question Bank Routes
 router.get('/questions', requireAuth, requireAdmin, getQuestions);

@@ -187,4 +187,9 @@ export const sendBulkCandidateEmails = async (candidates, type) => {
   return response.data;
 };
 
+export const updateCandidateStatus = async (sessionId, status) => {
+  const response = await api.patch(`/session/${sessionId}/status`, { status });
+  return response.data;
+};
+
 export default api;

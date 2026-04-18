@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { fetchJobs, createJob, getJobCandidates, sendCandidateEmail, sendBulkCandidateEmails } from '../services/api';
+import { fetchJobs, createJob, getJobCandidates, sendCandidateEmail, sendBulkCandidateEmails, updateCandidateStatus } from '../services/api';
 import {
   Plus, Users, AlertTriangle, Briefcase, Search, X, Download, Eye,
   MoreHorizontal, TrendingUp, CheckCircle2, Trash2, Star, StarOff, RotateCcw,
@@ -84,15 +84,29 @@ export default function AdminDashboard() {
 
   const loadCandidates = async () => {
     try {
+      let flat = [];
       if (selectedJobId === 'all') {
         const lists = await Promise.all(jobs.map((j) => getJobCandidates(j._id).catch(() => [])));
-        const flat = lists.flatMap((list, idx) => list.map((c) => ({ ...c, _jobTitle: jobs[idx]?.title })));
-        setCandidates(flat);
+        flat = lists.flatMap((list, idx) => list.map((c) => ({ ...c, _jobTitle: jobs[idx]?.title })));
       } else {
         const data = await getJobCandidates(selectedJobId);
         const job = jobs.find((j) => j._id === selectedJobId);
-        setCandidates(data.map((c) => ({ ...c, _jobTitle: job?.title })));
+        flat = data.map((c) => ({ ...c, _jobTitle: job?.title }));
       }
+      setCandidates(flat);
+      
+      // Sync DB status to local state if missing
+      setStatuses(prev => {
+        const up = { ...prev };
+        let modified = false;
+        flat.forEach(c => {
+          if (c.status && c.status !== 'pending') {
+            up[c._id] = c.status;
+            modified = true;
+          }
+        });
+        return modified ? up : prev;
+      });
     } catch (e) {
       console.error(e);
     }
@@ -126,13 +140,23 @@ export default function AdminDashboard() {
 
   const getStatus = (id) => statuses[id]; // 'shortlisted' | 'deleted' | undefined
 
-  const setStatus = (id, next) => {
-    setStatuses((prev) => {
-      const copy = { ...prev };
-      if (!next) delete copy[id];
-      else copy[id] = next;
-      return copy;
-    });
+  const setStatus = async (id, next) => {
+    try {
+      // Opt-out of calling API if deleting local status (wait, if rejecting to 'deleted', backend needs status)
+      // Send standard 'pending', 'shortlisted', 'deleted'
+      const backendStatus = next || 'pending';
+      await updateCandidateStatus(id, backendStatus);
+      
+      setStatuses((prev) => {
+        const copy = { ...prev };
+        if (!next) delete copy[id];
+        else copy[id] = next;
+        return copy;
+      });
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      alert('Failed to update candidate status.');
+    }
     setOpenMenuId(null);
   };
 
@@ -342,8 +366,8 @@ export default function AdminDashboard() {
           />
         </div>
         <div style={{ width: 1, height: 24, background: '#E2E8F0', margin: '0 4px' }} />
-        <Select value={selectedJobId} onChange={setSelectedJobId} label="Role">
-          <option value="all">All roles</option>
+        <Select value={selectedJobId} onChange={setSelectedJobId} label="Session">
+          <option value="all">All sessions</option>
           {jobs.map((j) => <option key={j._id} value={j._id}>{j.title} [{j.interviewCode || 'NO CODE'}]</option>)}
         </Select>
         <Select value={filterScore} onChange={setFilterScore} label="Score">
@@ -425,7 +449,7 @@ export default function AdminDashboard() {
               </div>
               <p style={{ fontSize: 18, fontWeight: 700, color: '#0F172A' }}>No candidates to show</p>
               <p style={{ marginTop: 8, fontSize: 14, color: '#64748B', maxWidth: 300, margin: '8px auto 0' }}>
-                {activeFilterCount > 0 ? 'Try adjusting or resetting your filters to find candidates.' : 'Get started by deploying your first role.'}
+                {activeFilterCount > 0 ? 'Try adjusting or resetting your filters to find candidates.' : 'Get started by creating your first interview session.'}
               </p>
             </div>
           ) : (
@@ -434,7 +458,7 @@ export default function AdminDashboard() {
               <thead>
                 <tr>
                   <th>Candidate</th>
-                  <th>Role</th>
+                  <th>Session</th>
                   <th>Code</th>
                   <th>Time taken</th>
                   <th>Flags</th>

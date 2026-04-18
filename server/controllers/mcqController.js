@@ -355,3 +355,29 @@ export const submitFeedback = async (req, res) => {
     res.status(500).json({ error: 'Failed to submit feedback' });
   }
 };
+
+export const updateSessionStatus = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { status } = req.body;
+
+    if (!['pending', 'shortlisted', 'rejected', 'deleted'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const session = await Session.findByIdAndUpdate(
+      sessionId,
+      { status },
+      { new: true }
+    );
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    res.json({ message: 'Status updated', status: session.status });
+  } catch (error) {
+    console.error('Update status error:', error);
+    res.status(500).json({ error: 'Failed to update status' });
+  }
+};

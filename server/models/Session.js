@@ -39,7 +39,8 @@ const sessionSchema = new mongoose.Schema({
     rating: { type: Number, min: 1, max: 5 },
     comment: { type: String },
     submittedAt: { type: Date }
-  }
+  },
+  status: { type: String, enum: ['pending', 'shortlisted', 'rejected', 'deleted'], default: 'pending' },
 });
 
 const Session = mongoose.model('Session', sessionSchema);
