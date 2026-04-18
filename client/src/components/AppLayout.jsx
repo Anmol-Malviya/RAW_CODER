@@ -10,12 +10,8 @@ const candidateNav = [
 ];
 
 const adminNav = [
-<<<<<<< HEAD
-  { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, match: '/admin' },
-  { label: 'Manage Roles', href: '/admin/roles', icon: Settings2, match: '/admin/roles' },
-=======
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, match: '/admin', exact: true },
->>>>>>> 187117cb3176ec75e631866e4a2838400b1b90b3
+  { label: 'Manage Roles', href: '/admin/roles', icon: Settings2, match: '/admin/roles' },
   { label: 'Live Monitoring', href: '/admin/live', icon: Video, match: '/admin/live' },
   { label: 'Question Bank', href: '/admin/questions', icon: Database, match: '/admin/questions' },
   { label: 'Sessions', href: '/admin/sessions', icon: BookOpen, match: '/admin/sessions' },
