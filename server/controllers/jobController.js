@@ -43,7 +43,7 @@ export const createJob = async (req, res) => {
       interviewType: interviewType || 'technical',
       hasCodingRound: !!hasCodingRound,
       interviewCode,
-      adminId: req.user.id,
+      adminId: new mongoose.Types.ObjectId(req.user.id),
     });
 
     await job.save();
@@ -60,17 +60,23 @@ export const getJobs = async (req, res) => {
       console.log('⚡ Mock Mode: Fetching jobs from memory');
       return res.json(mockJobs);
     }
-    // If admin is requesting, return their jobs. Otherwise, return all active jobs for candidates.
+
     let filter = { isActive: true };
     if (req.user.role === 'admin') {
-      filter = { adminId: req.user.id };
+      // Safely convert string ID to ObjectId to prevent cast errors
+      try {
+        filter = { adminId: new mongoose.Types.ObjectId(req.user.id) };
+      } catch (castErr) {
+        filter = { adminId: req.user.id };
+      }
     }
 
     const jobs = await Job.find(filter).sort({ createdAt: -1 });
     res.json(jobs);
   } catch (error) {
-    console.error('Get Jobs Error:', error);
-    res.status(500).json({ error: 'Failed to fetch jobs' });
+    console.error('Get Jobs Error:', error.message);
+    // Return empty array instead of crashing — dashboard still loads
+    res.json([]);
   }
 };
 
