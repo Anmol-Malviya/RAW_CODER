@@ -20,15 +20,25 @@ const adminNav = [
 ];
 
 const titleMap = [
+  // Candidate sub-routes (specific before generic)
+  { match: '/candidate/practice', title: 'Practice Area' },
+  { match: '/candidate/profile', title: 'My Profile' },
+  { match: '/candidate/support', title: 'Help & Support' },
   { match: '/candidate', title: 'Dashboard' },
+  { match: '/check', title: 'System Check' },
   { match: '/apply', title: 'Apply to role' },
   { match: '/assessment', title: 'Live interview' },
   { match: '/results', title: 'Report' },
   { match: '/coding', title: 'Coding test' },
-  { match: '/admin', title: 'Admin monitoring' },
+  { match: '/voice-interview', title: 'Voice Interview' },
+  // Admin sub-routes (specific before generic)
   { match: '/admin/roles', title: 'Role Management' },
   { match: '/admin/live', title: 'Live Monitoring' },
+  { match: '/admin/questions', title: 'Question Bank' },
   { match: '/admin/sessions', title: 'Interview Sessions' },
+  { match: '/admin/analytics', title: 'Analytics' },
+  { match: '/admin/settings', title: 'Settings' },
+  { match: '/admin', title: 'Dashboard' },
 ];
 
 function getPageTitle(pathname) {
