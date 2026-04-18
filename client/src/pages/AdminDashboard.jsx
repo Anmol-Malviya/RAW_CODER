@@ -329,21 +329,72 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-      {/* Premium Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32, padding: '32px 40px', background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', borderRadius: 24, boxShadow: '0 20px 40px -12px rgba(15,23,42,0.4)', color: 'white', flexWrap: 'wrap', gap: 20 }}>
+      {/* Dynamic Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyItems: 'space-between', justifyContent: 'space-between', marginBottom: 32, padding: '32px 40px', background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', borderRadius: 24, boxShadow: '0 20px 40px -12px rgba(15,23,42,0.4)', color: 'white', flexWrap: 'wrap', gap: 20 }}>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#818CF8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Overview</p>
+          {selectedJobId !== 'all' ? (
+            <button onClick={() => setSelectedJobId('all')} className="btn-ghost" style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.1)', color: 'white', borderRadius: 8, marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, border: 'none', cursor: 'pointer' }}>
+               ← Back to All Sessions
+            </button>
+          ) : (
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#818CF8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Manage Roles</p>
+          )}
           <h1 style={{ fontSize: 32, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
-            Admin Command Center
+            {selectedJobId !== 'all' ? (jobs.find(j => j._id === selectedJobId)?.title || 'Session Candidates') : 'Interview Sessions'}
           </h1>
           <p style={{ marginTop: 8, fontSize: 15, color: '#94A3B8', fontWeight: 500 }}>
-            Monitor live interviews, flags, and system-wide candidate intelligence.
+            {selectedJobId !== 'all' ? 'Review, shortlist, and dispatch decision emails for this specific session.' : 'Manage your interview sessions and navigate to candidate lists.'}
           </p>
         </div>
-        <button onClick={() => setShowNewJobModal(true)} style={{ height: 44, padding: '0 24px', background: '#6366F1', color: 'white', borderRadius: 12, fontWeight: 700, fontSize: 14, border: 'none', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', boxShadow: '0 8px 16px -4px rgba(99,102,241,0.5)', transition: 'all 0.2s' }} onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 20px -4px rgba(99,102,241,0.6)'; }} onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 8px 16px -4px rgba(99,102,241,0.5)'; }}>
-          <Plus size={18} strokeWidth={2.5} /> Deploy New Role
-        </button>
+        {selectedJobId === 'all' && (
+          <button onClick={() => setShowNewJobModal(true)} style={{ height: 44, padding: '0 24px', background: '#6366F1', color: 'white', borderRadius: 12, fontWeight: 700, fontSize: 14, border: 'none', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', boxShadow: '0 8px 16px -4px rgba(99,102,241,0.5)', transition: 'all 0.2s' }} onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 20px -4px rgba(99,102,241,0.6)'; }} onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 8px 16px -4px rgba(99,102,241,0.5)'; }}>
+            <Plus size={18} strokeWidth={2.5} /> Create Session
+          </button>
+        )}
       </div>
+
+      {selectedJobId === 'all' ? (
+        /* SESSIONS VIEW */
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 24, padding: '8px', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)' }}>
+          <div style={{ overflow: 'hidden', borderRadius: 16 }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Session Title</th>
+                  <th>Join Code</th>
+                  <th>Difficulty</th>
+                  <th>Created</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {jobs.map(job => (
+                  <tr key={job._id}>
+                    <td><span style={{ fontWeight: 600, color: '#0F172A' }}>{job.title}</span></td>
+                    <td><span className="status-pill pill-indigo" style={{ fontFamily: 'monospace' }}>{job.interviewCode}</span></td>
+                    <td>{job.difficulty}</td>
+                    <td style={{ color: '#64748B' }}>{new Date(job.createdAt).toLocaleDateString()}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button onClick={() => setSelectedJobId(job._id)} className="btn-primary" style={{ padding: '6px 16px', fontSize: 13, borderRadius: 8, border: 'none', background: '#4F46E5', color: 'white', cursor: 'pointer' }}>
+                        View Candidates
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {jobs.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan="5" style={{ textAlign: 'center', padding: '40px 20px', color: '#64748B' }}>
+                      No interview sessions created yet. Click "Create Session" to begin.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        /* CANDIDATES VIEW */
+        <>
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 32 }}>
@@ -366,10 +417,7 @@ export default function AdminDashboard() {
           />
         </div>
         <div style={{ width: 1, height: 24, background: '#E2E8F0', margin: '0 4px' }} />
-        <Select value={selectedJobId} onChange={setSelectedJobId} label="Session">
-          <option value="all">All sessions</option>
-          {jobs.map((j) => <option key={j._id} value={j._id}>{j.title} [{j.interviewCode || 'NO CODE'}]</option>)}
-        </Select>
+        {/* Session Dropdown is removed since candidates view is locked to one session */}
         <Select value={filterScore} onChange={setFilterScore} label="Score">
           <option value="all">All scores</option>
           <option value="high">Strong (7+)</option>
@@ -449,7 +497,7 @@ export default function AdminDashboard() {
               </div>
               <p style={{ fontSize: 18, fontWeight: 700, color: '#0F172A' }}>No candidates to show</p>
               <p style={{ marginTop: 8, fontSize: 14, color: '#64748B', maxWidth: 300, margin: '8px auto 0' }}>
-                {activeFilterCount > 0 ? 'Try adjusting or resetting your filters to find candidates.' : 'Get started by creating your first interview session.'}
+                {activeFilterCount > 0 ? 'Try adjusting or resetting your filters to find candidates.' : 'No candidates have applied to this session yet.'}
               </p>
             </div>
           ) : (
@@ -458,7 +506,6 @@ export default function AdminDashboard() {
               <thead>
                 <tr>
                   <th>Candidate</th>
-                  <th>Session</th>
                   <th>Code</th>
                   <th>Time taken</th>
                   <th>Flags</th>
@@ -509,9 +556,6 @@ export default function AdminDashboard() {
                             <p style={{ fontSize: 12, color: '#64748B' }}>{email}</p>
                           </div>
                         </div>
-                      </td>
-                      <td>
-                        <span style={{ fontSize: 13, color: '#334155' }}>{c._jobTitle || '—'}</span>
                       </td>
                       <td>
                         <span style={{ 
@@ -619,6 +663,8 @@ export default function AdminDashboard() {
         )}
         </div>
       </div>
+      </>
+      )}
 
       {/* View candidate modal */}
       {viewing && (
