@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, MicOff, PhoneOff, Volume2, Loader, CheckCircle, ChevronRight } from 'lucide-react';
+import { Mic, MicOff, Volume2, Loader } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { useAssessment } from '../context/AssessmentContext';
 import { submitAssessment } from '../services/api';
@@ -304,14 +304,7 @@ export default function VoiceInterviewPage() {
     );
   };
 
-  const endInterview = () => {
-    synthRef.current.cancel();
-    recognitionRef.current?.stop();
-    clearTimeout(silenceTimerRef.current);
-    clearInterval(countdownIntervalRef.current);
-    streamRef.current?.getTracks().forEach(t => t.stop());
-    navigate('/candidate');
-  };
+  // No end button — interview is purely voice driven
 
   const progress = questions?.length ? ((currentQuestion + 1) / questions.length) * 100 : 0;
   const questionText = question?.text || question || '';
@@ -541,45 +534,8 @@ export default function VoiceInterviewPage() {
           <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #4F46E5, #7C3AED)', borderRadius: 99, transition: 'width 0.6s ease' }} />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-          {/* Manual next (in case user wants to skip) */}
-          {(phase === PHASES.LISTENING || phase === PHASES.SILENCE_COUNTDOWN) && (
-            <button
-              onClick={autoSubmitAnswer}
-              style={{
-                padding: '12px 24px', borderRadius: 12,
-                background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
-                color: 'white', border: 'none', fontSize: 14, fontWeight: 700,
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
-                boxShadow: '0 4px 16px rgba(79,70,229,0.3)', transition: 'all 0.2s'
-              }}
-            >
-              {isLastQuestion ? <><CheckCircle size={16} /> Submit</> : <><ChevronRight size={16} /> Next Question</>}
-            </button>
-          )}
-
-          {submitting && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#475569', fontSize: 14 }}>
-              <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> Processing...
-            </div>
-          )}
-
-          {/* End interview */}
-          <button
-            onClick={endInterview}
-            style={{
-              width: 48, height: 48, borderRadius: '50%', border: 'none',
-              background: '#EF4444', color: 'white',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', boxShadow: '0 4px 12px rgba(239,68,68,0.3)', transition: 'all 0.2s'
-            }}
-          >
-            <PhoneOff size={18} />
-          </button>
-        </div>
-
         <p style={{ textAlign: 'center', fontSize: 12, color: '#334155', marginTop: 12 }}>
-          🤖 Mic auto-activates after each question • Silence for 8s = auto-next
+          🤖 Mic auto-activates after each question &nbsp;•&nbsp; Silence for 8s = auto-next
         </p>
       </div>
 
