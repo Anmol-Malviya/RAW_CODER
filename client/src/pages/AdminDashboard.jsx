@@ -104,6 +104,10 @@ export default function AdminDashboard() {
     try {
       const created = await createJob(newJob.title, newJob.description, newJob.difficulty, newJob.interviewType, newJob.hasCodingRound);
       setLatestJob(created); // New state to show success
+      // Open the candidate portal in a new window as requested
+      const joinUrl = window.location.origin + '/candidate';
+      window.open(joinUrl, '_blank');
+      
       setNewJob({ 
         title: '', 
         description: '',
@@ -514,9 +518,16 @@ export default function AdminDashboard() {
                   {latestJob.interviewCode}
                 </div>
                 <button 
+                  onClick={() => window.open(window.location.origin + '/candidate', '_blank')}
+                  className="btn-secondary"
+                  style={{ width: '100%', marginTop: 24, height: 44, borderColor: '#6366F1', color: '#4F46E5', fontWeight: 700 }}
+                >
+                  Open Interview Portal
+                </button>
+                <button 
                   onClick={() => { setShowNewJobModal(false); setLatestJob(null); }}
                   className="btn-primary"
-                  style={{ width: '100%', marginTop: 32, height: 44 }}
+                  style={{ width: '100%', marginTop: 12, height: 44 }}
                 >
                   Done
                 </button>

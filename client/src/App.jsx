@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import { AssessmentProvider } from './context/AssessmentContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AppLayout from './components/AppLayout';
-import Chatbot from './components/Chatbot';
 import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import CandidateDashboard from './pages/CandidateDashboard';
@@ -76,7 +75,6 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <AppRoutes />
-        <Chatbot />
       </BrowserRouter>
     </AuthProvider>
   );

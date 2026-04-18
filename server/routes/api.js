@@ -5,7 +5,6 @@ import { register, login, getProfile, updateProfile } from '../controllers/authC
 import { createJob, getJobs, getJobDetails, getJobCandidates, getJobByCode } from '../controllers/jobController.js';
 import { generateMCQ, submitAssessment, getSession, uploadRecording, uploadScreenRecording, getUserSessions, generatePracticeSession } from '../controllers/mcqController.js';
 import { voiceChat } from '../controllers/voiceController.js';
-import { chatWithBot } from '../controllers/chatController.js';
 import { getQuestions, createQuestion, deleteQuestion } from '../controllers/questionController.js';
 import { getDashboardAnalytics } from '../controllers/analyticsController.js';
 import { getSettings, updateSetting } from '../controllers/settingController.js';
@@ -37,9 +36,6 @@ router.get('/sessions/user', requireAuth, getUserSessions);
 
 // Voice Routes
 router.post('/voice-chat', requireAuth, voiceChat);
-
-// Bot Routes
-router.post('/chat', chatWithBot);
 
 // Question Bank Routes
 router.get('/questions', requireAuth, requireAdmin, getQuestions);
