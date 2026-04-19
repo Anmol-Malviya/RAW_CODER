@@ -113,7 +113,7 @@ export default function WorkspaceSessionDetail() {
     // Optimistic update
     setCandidates(p => p.map(c => c._id === candidateId ? { ...c, status: newStatus } : c));
     try {
-      await api.patch(`/candidates/${candidateId}/status`, { status: newStatus });
+      await api.put(`/candidates/${candidateId}/status`, { status: newStatus });
       setToast({ message: `Candidate ${newStatus === 'shortlisted' ? 'shortlisted' : 'rejected'} successfully.`, type: 'success' });
     } catch (error) {
       console.error('Failed to update status', error);

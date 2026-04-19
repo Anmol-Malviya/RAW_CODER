@@ -142,6 +142,7 @@ export const getSessionCandidates = async (req, res) => {
 
 // Update candidate status
 export const updateCandidateStatus = async (req, res) => {
+  console.log(`Update status request: id=${req.params.id}, status=${req.body.status}`);
   try {
     const { id } = req.params;
     const { status } = req.body;

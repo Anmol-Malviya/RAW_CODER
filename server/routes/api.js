@@ -45,7 +45,7 @@ router.post('/submit-feedback', requireAuth, submitFeedback);
 router.post('/voice-chat', requireAuth, voiceChat);
 
 // Status Update Route
-router.patch('/session/:sessionId/status', requireAuth, requireAdmin, updateSessionStatus);
+router.put('/session/:sessionId/status', requireAuth, requireAdmin, updateSessionStatus);
 
 // Question Bank Routes
 router.get('/questions', requireAuth, requireAdmin, getQuestions);
@@ -66,7 +66,7 @@ router.post('/email/bulk-send', requireAuth, requireAdmin, sendBulkEmails);
 // Workspace (Interview Candidate Management) Routes
 router.get('/sessions', requireAuth, requireAdmin, getSessions);
 router.get('/sessions/:id/candidates', requireAuth, requireAdmin, getSessionCandidates);
-router.patch('/candidates/:id/status', requireAuth, requireAdmin, updateWSStatus);
+router.put('/candidates/:id/status', requireAuth, requireAdmin, updateWSStatus);
 router.post('/sessions/:id/send-shortlisted-emails', requireAuth, requireAdmin, sendShortlistedEmails);
 router.post('/sessions/:id/send-rejection-emails', requireAuth, requireAdmin, sendRejectionEmails);
 

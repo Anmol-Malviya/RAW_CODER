@@ -289,17 +289,14 @@ body {
 @keyframes page-fade {
   from {
     opacity: 0;
-    transform: translateY(6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 .page-fade-in {
   animation: page-fade 0.18s ease-out both;
-  will-change: opacity, transform;
 }
 
 /* ---------- Cards & panels ---------- */
