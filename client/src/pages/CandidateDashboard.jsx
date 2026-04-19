@@ -173,7 +173,7 @@ export default function CandidateDashboard() {
                         </div>
                       </div>
                       <button 
-                        onClick={() => navigate('/apply', { state: { job } })}
+                        onClick={() => navigate(`/apply/${job._id}`, { state: { job } })}
                         className="btn-secondary" 
                         style={{ padding: '10px 24px', borderRadius: 12, fontWeight: 700 }}
                       >
