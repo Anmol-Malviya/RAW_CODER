@@ -22,18 +22,23 @@ const STEPS = [
 export default function JobApplyPage() {
   const { jobId } = useParams();
   const location = useLocation();
-  const [job, setJob] = useState(location.state?.jobData || null);
+  const navigate = useNavigate();
+  const passedJob = location.state?.jobData || location.state?.job || null;
+  const [job, setJob] = useState(passedJob);
   const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(!location.state?.jobData);
+  const [loading, setLoading] = useState(!passedJob);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [activeStep, setActiveStep] = useState(0);
   const [dragOver, setDragOver] = useState(false);
-  const navigate = useNavigate();
   const { dispatch } = useAssessment();
   const [interviewMode, setInterviewMode] = useState('voice'); // 'voice' | 'mcq'
 
   useEffect(() => {
+    if (!jobId) {
+      navigate('/candidate', { replace: true });
+      return;
+    }
     if (job) return;
     const fetchJob = async () => {
       try {
@@ -46,7 +51,7 @@ export default function JobApplyPage() {
       }
     };
     fetchJob();
-  }, [jobId, job]);
+  }, [jobId, job, navigate]);
 
   useEffect(() => {
     if (!generating) return;

@@ -173,7 +173,10 @@ export default function CandidateDashboard() {
                         </div>
                       </div>
                       <button 
-                        onClick={() => navigate(`/apply/${job._id}`, { state: { job } })}
+                        onClick={() => {
+                          if (!job._id) return alert('Job data unavailable. Please refresh.');
+                          navigate(`/apply/${job._id}`, { state: { jobData: job } });
+                        }}
                         className="btn-secondary" 
                         style={{ padding: '10px 24px', borderRadius: 12, fontWeight: 700 }}
                       >
