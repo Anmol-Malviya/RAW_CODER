@@ -3,7 +3,7 @@ import { fetchJobs, createJob, getJobCandidates, sendCandidateEmail, sendBulkCan
 import {
   Plus, Users, AlertTriangle, Briefcase, Search, X, Download, Eye,
   MoreHorizontal, TrendingUp, CheckCircle2, Trash2, Star, StarOff, RotateCcw,
-  Calendar, FileText, Mail, Clock, Send, CheckCheck, XCircle,
+  Calendar, FileText, Mail, Clock, Send, CheckCheck, XCircle, Sparkles
 } from 'lucide-react';
 
 const STATUS_KEY = 'ai_interviewer:admin:statuses';
@@ -756,6 +756,11 @@ function DropdownItem({ children, onClick, tone }) {
 }
 
 function ViewCandidateModal({ candidate: c, status, onClose, onDelete, onDownload }) {
+  const [selectedSending, setSelectedSending] = useState(false);
+  const [selectedDone, setSelectedDone] = useState(status === 'shortlisted' || status === 'hired');
+  const [rejectedSending, setRejectedSending] = useState(false);
+  const [rejectedDone, setRejectedDone] = useState(status === 'rejected');
+
   const name = c.candidateId?.name || 'Unknown';
   const email = c.candidateId?.email || '—';
   const score = c.score || 0;
@@ -764,6 +769,30 @@ function ViewCandidateModal({ candidate: c, status, onClose, onDelete, onDownloa
   const total = c.questions?.length || 0;
   const correct = (c.questions || []).filter((q) => (c.answers || {})[q.id] === q.correctAnswer).length;
   const accuracy = total ? Math.round((correct / total) * 100) : 0;
+
+  const onSendSelected = async () => {
+    setSelectedSending(true);
+    try {
+      await sendCandidateEmail(email, name, c._jobTitle || 'Role', 'selected');
+      setSelectedDone(true);
+    } catch (e) {
+      alert('Failed to send email.');
+    } finally {
+      setSelectedSending(false);
+    }
+  };
+
+  const onSendRejected = async () => {
+    setRejectedSending(true);
+    try {
+      await sendCandidateEmail(email, name, c._jobTitle || 'Role', 'rejected');
+      setRejectedDone(true);
+    } catch (e) {
+      alert('Failed to send email.');
+    } finally {
+      setRejectedSending(false);
+    }
+  };
 
   return (
     <div
