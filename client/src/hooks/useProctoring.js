@@ -48,14 +48,12 @@ export function useProctoring() {
         }
       };
 
-      window.addEventListener('blur', handleTabViolation);
       document.addEventListener('visibilitychange', handleVisibilityChange);
       document.addEventListener('copy', preventCopy);
       document.addEventListener('paste', preventCopy);
       document.addEventListener('contextmenu', preventContextMenu);
 
       return () => {
-        window.removeEventListener('blur', handleTabViolation);
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         document.removeEventListener('copy', preventCopy);
         document.removeEventListener('paste', preventCopy);

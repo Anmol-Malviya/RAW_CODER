@@ -64,7 +64,8 @@ export default function AppLayout() {
   const items = user?.role === 'admin' ? adminNav : candidateNav;
   const pageTitle = getPageTitle(location.pathname);
 
-  const initials = user?.name?.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase() || 'U';
+  const displayName = user?.name || user?.email?.split('@')[0] || 'User';
+  const initials = displayName.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase() || 'U';
 
   const handleLogout = () => {
     logout();
@@ -129,7 +130,7 @@ export default function AppLayout() {
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             >
               <div className="profile-copy">
-                <p className="profile-name">{user?.name || 'Your name'}</p>
+                <p className="profile-name">{displayName}</p>
                 <p className="profile-role">{user?.role === 'admin' ? 'Administrator' : 'Candidate'}</p>
               </div>
               <div className="profile-avatar-group">
@@ -148,7 +149,7 @@ export default function AppLayout() {
                   className="profile-dropdown"
                 >
                   <div className="dropdown-header">
-                    <p className="dropdown-user-name">{user?.name}</p>
+                    <p className="dropdown-user-name">{displayName}</p>
                     <p className="dropdown-user-email">{user?.email}</p>
                   </div>
 

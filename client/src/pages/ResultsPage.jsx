@@ -2,10 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   CheckCircle, XCircle, ChevronDown, ChevronUp, RotateCcw, AlertTriangle,
-  Download, Sparkles, TrendingUp, TrendingDown, Target, Loader, Star, Send
+  Download, Sparkles, TrendingUp, TrendingDown, Target, Loader
 } from 'lucide-react';
 import { useAssessment } from '../context/AssessmentContext';
-import { submitFeedback, getSession } from '../services/api';
+import { getSession } from '../services/api';
 
 function ScoreRing({ score, total }) {
   const radius = 52;
@@ -134,11 +134,7 @@ export default function ResultsPage() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(false);
   const [openQuestions, setOpenQuestions] = useState({});
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
-  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+
 
   useEffect(() => {
     const sessionId = location.state?.sessionId;
@@ -148,15 +144,12 @@ export default function ResultsPage() {
       loadSession(sessionId);
     } else if (assessmentState.status === 'completed' && assessmentState.score !== null) {
       setSession(assessmentState);
-      // Show feedback modal after 3 seconds of viewing results
-      const timer = setTimeout(() => {
-        if (!feedbackSubmitted) setShowFeedbackModal(true);
-      }, 3000);
-      return () => clearTimeout(timer);
+      return;
+
     } else {
       navigate('/');
     }
-  }, [assessmentState, location.state, navigate, feedbackSubmitted]);
+  }, [assessmentState, location.state, navigate]);
 
   const loadSession = async (id) => {
     setLoading(true);
@@ -213,83 +206,8 @@ export default function ResultsPage() {
   };
   const collapseAll = () => setOpenQuestions({});
 
-  const handleFeedbackSubmit = async () => {
-    if (rating === 0) return;
-    setSubmittingFeedback(true);
-    try {
-      const id = session.sessionId || assessmentState.sessionId;
-      await submitFeedback(id, rating, comment);
-      setFeedbackSubmitted(true);
-      setShowFeedbackModal(false);
-    } catch (err) {
-      console.error('Feedback failed:', err);
-      alert('Failed to submit feedback');
-    } finally {
-      setSubmittingFeedback(false);
-    }
-  };
-
-  const FeedbackModal = () => (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 20 }}>
-      <div className="card" style={{ width: '100%', maxWidth: 440, padding: 32, textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
-        <div style={{ width: 64, height: 64, borderRadius: 20, background: '#EEF2FF', color: '#4F46E5', display: 'grid', placeItems: 'center', margin: '0 auto 20px' }}>
-          <Sparkles size={32} />
-        </div>
-        <h3 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>Rate Your Experience</h3>
-        <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.5, marginBottom: 24 }}>
-          How was your AI interview session? Your feedback helps us improve the experience.
-        </p>
-
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
-          {[1, 2, 3, 4, 5].map((s) => (
-            <button
-              key={s}
-              onMouseEnter={() => !rating && setRating(0)} // dummy
-              onClick={() => setRating(s)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
-            >
-              <Star
-                size={36}
-                fill={s <= rating ? '#F59E0B' : 'transparent'}
-                color={s <= rating ? '#F59E0B' : '#CBD5E1'}
-                strokeWidth={2}
-                style={{ transition: 'transform 0.1s' }}
-              />
-            </button>
-          ))}
-        </div>
-
-        <textarea
-          placeholder="Any additional thoughts? (Optional)"
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid #E2E8F0', background: '#F8FAFC', fontSize: 14, minHeight: 100, marginBottom: 24, outline: 'none', resize: 'none' }}
-        />
-
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button
-            onClick={() => setShowFeedbackModal(false)}
-            className="btn-secondary"
-            style={{ flex: 1 }}
-          >
-            Skip
-          </button>
-          <button
-            onClick={handleFeedbackSubmit}
-            disabled={rating === 0 || submittingFeedback}
-            className="btn-primary"
-            style={{ flex: 2, gap: 8 }}
-          >
-            {submittingFeedback ? 'Submitting...' : 'Submit Review'} <Send size={14} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-      {showFeedbackModal && <FeedbackModal />}
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
         <div>

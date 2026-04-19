@@ -88,7 +88,8 @@ export default function CodingTestPage() {
       alert('Practice session completed! Great job.');
       navigate('/candidate/practice');
     } else {
-      navigate('/results');
+      proctoring.deactivate();
+      navigate(`/feedback/${assessmentState.sessionId}`);
     }
   };
 

@@ -26,6 +26,7 @@ import SessionCandidatesPage from './pages/SessionCandidatesPage';
 import WorkspaceDashboard from './pages/WorkspaceDashboard';
 import WorkspaceSessionDetail from './pages/WorkspaceSessionDetail';
 import AdminProfile from './pages/AdminProfile';
+import FeedbackPage from './pages/FeedbackPage';
 
 function ProtectedRoute({ children, role }) {
   const { user } = useAuth();
@@ -46,6 +47,14 @@ function AuthenticatedLayout() {
   );
 }
 
+function CandidateAssessmentWrapper() {
+  return (
+    <AssessmentProvider>
+      <Outlet />
+    </AssessmentProvider>
+  );
+}
+
 function AppRoutes() {
   const { user } = useAuth();
 
@@ -57,19 +66,27 @@ function AppRoutes() {
       {/* Login / Signup page */}
       <Route path="/login" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/candidate'} replace /> : <LoginPage />} />
 
-      <Route element={<ProtectedRoute role="candidate"><AuthenticatedLayout /></ProtectedRoute>}>
-        <Route path="/candidate" element={<CandidateDashboard />} />
-        <Route path="/check" element={<SystemCheckPage />} />
-        <Route path="/apply/:jobId" element={<JobApplyPage />} />
-        <Route path="/apply" element={<Navigate to="/candidate" replace />} />
-        <Route path="/assessment" element={<AssessmentPage />} />
-        <Route path="/results" element={<ResultsPage />} />
-        <Route path="/coding" element={<CodingTestPage />} />
-        <Route path="/candidate/practice" element={<CandidatePractice />} />
-        <Route path="/candidate/profile" element={<CandidateProfile />} />
-        <Route path="/candidate/ats" element={<CandidateATSChecker />} />
-        <Route path="/candidate/support" element={<CandidateSupport />} />
-        <Route path="/voice-interview" element={<VoiceInterviewPage />} />
+      <Route element={<ProtectedRoute role="candidate" />}>
+        <Route element={<CandidateAssessmentWrapper />}>
+          {/* Fullscreen Assessment Pages */}
+          <Route path="/check" element={<SystemCheckPage />} />
+          <Route path="/assessment" element={<AssessmentPage />} />
+          <Route path="/coding" element={<CodingTestPage />} />
+          <Route path="/voice-interview" element={<VoiceInterviewPage />} />
+          <Route path="/feedback/:sessionId" element={<FeedbackPage />} />
+
+          {/* Layout Pages (Dashboard, Profile, Results) */}
+          <Route element={<AppLayout />}>
+            <Route path="/candidate" element={<CandidateDashboard />} />
+            <Route path="/apply/:jobId" element={<JobApplyPage />} />
+            <Route path="/apply" element={<Navigate to="/candidate" replace />} />
+            <Route path="/results" element={<ResultsPage />} />
+            <Route path="/candidate/practice" element={<CandidatePractice />} />
+            <Route path="/candidate/profile" element={<CandidateProfile />} />
+            <Route path="/candidate/ats" element={<CandidateATSChecker />} />
+            <Route path="/candidate/support" element={<CandidateSupport />} />
+          </Route>
+        </Route>
       </Route>
 
       <Route element={<ProtectedRoute role="admin"><AuthenticatedLayout /></ProtectedRoute>}>

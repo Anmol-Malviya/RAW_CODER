@@ -55,7 +55,9 @@ export default function AssessmentPage() {
       };
 
       recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
+        if (event.error !== 'no-speech' && event.error !== 'aborted') {
+          console.error('Speech recognition error:', event.error);
+        }
         setIsListening(false);
       };
 
@@ -64,6 +66,13 @@ export default function AssessmentPage() {
       };
 
       recognitionRef.current = recognition;
+
+      return () => {
+        recognition.stop();
+        recognition.onend = null;
+        recognition.onerror = null;
+        recognition.onresult = null;
+      };
     }
   }, []);
 
@@ -94,7 +103,8 @@ export default function AssessmentPage() {
   }, [currentQuestion, question, state.status, micOn]);
 
   useEffect(() => {
-    if (state.status !== 'active' || questions.length === 0) {
+    // Only redirect if there is no active session or we are in idle state
+    if (state.status === 'idle' || questions.length === 0) {
       navigate('/candidate');
     }
   }, [state.status, questions, navigate]);
@@ -116,7 +126,7 @@ export default function AssessmentPage() {
 
   useEffect(() => {
     let stream;
-    socketRef.current = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000', { transports: ['websocket'] });
+    socketRef.current = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000');
     
     const enable = async () => {
       try {
@@ -251,9 +261,11 @@ export default function AssessmentPage() {
       });
       proctoring.deactivate();
       if (state.hasCodingRound) {
+        console.log('Navigating to coding round');
         navigate('/coding');
       } else {
-        navigate('/results');
+        console.log('Navigating to feedback for session:', sessionId);
+        navigate(`/feedback/${sessionId}`);
       }
     } catch (err) {
       console.error('Submit error:', err);
@@ -264,7 +276,7 @@ export default function AssessmentPage() {
         });
         dispatch({ type: 'COMPLETE', payload: { score, tabSwitchCount: proctoring.tabSwitchCount, questions: rawQuestions } });
         proctoring.deactivate();
-        navigate('/results');
+        navigate(`/feedback/${sessionId}`);
       }
     } finally {
       setSubmitting(false);

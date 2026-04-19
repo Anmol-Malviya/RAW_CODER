@@ -727,8 +727,8 @@ function Select({ value, onChange, children, label }) {
       style={{
         width: 'auto', minWidth: 140, cursor: 'pointer', padding: '10px 36px 10px 18px', background: hasValue ? '#EFF6FF' : 'transparent', color: hasValue ? '#4F46E5' : '#475569', fontWeight: 600, fontSize: 14, border: `2px solid ${hasValue ? '#4F46E5' : 'transparent'}`, borderRadius: 999, outline: 'none', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='${hasValue ? '%234F46E5' : '%2364748b'}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 5l3 3 3-3'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', transition: 'all 0.2s'
       }}
-      onMouseOver={e => !hasValue && (e.currentTarget.style.background = '#F8FAFC')}
-      onMouseOut={e => !hasValue && (e.currentTarget.style.background = 'transparent')}
+      onMouseOver={e => !hasValue && (e.currentTarget.style.backgroundColor = '#F8FAFC')}
+      onMouseOut={e => !hasValue && (e.currentTarget.style.backgroundColor = 'transparent')}
     >
       {children}
     </select>
