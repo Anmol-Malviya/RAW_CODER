@@ -61,6 +61,7 @@ function AppRoutes() {
         <Route path="/candidate" element={<CandidateDashboard />} />
         <Route path="/check" element={<SystemCheckPage />} />
         <Route path="/apply/:jobId" element={<JobApplyPage />} />
+        <Route path="/apply" element={<Navigate to="/candidate" replace />} />
         <Route path="/assessment" element={<AssessmentPage />} />
         <Route path="/results" element={<ResultsPage />} />
         <Route path="/coding" element={<CodingTestPage />} />
