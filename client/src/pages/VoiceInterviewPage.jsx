@@ -442,7 +442,7 @@ export default function VoiceInterviewPage() {
       } finally {
         streamRef.current?.getTracks().forEach(t => t.stop());
         setSubmitting(false);
-        navigate('/results');
+        navigate(`/feedback/${sessionId}`);
       }
     };
 
