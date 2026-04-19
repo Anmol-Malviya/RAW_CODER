@@ -68,8 +68,8 @@ export default function LoginPage() {
               onClick={() => navigate('/')}
               style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
             >
-              <div style={{ width: 40, height: 40, bg: '#4F46E5', background: 'linear-gradient(135deg, #6366F1, #4F46E5)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 20 }}>V</div>
-              <span style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>VyorAI</span>
+              <div style={{ width: 40, height: 40, bg: '#4F46E5', background: 'linear-gradient(135deg, #6366F1, #4F46E5)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 20 }}>A</div>
+              <span style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>AI Interviewer</span>
             </div>
           </div>
 
@@ -119,7 +119,7 @@ export default function LoginPage() {
         <div className="card" style={{ width: '100%', maxWidth: 440, padding: 40, borderRadius: 32, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.05)' }}>
           <div style={{ marginBottom: 32 }}>
             <h2 style={{ fontSize: 28, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.03em' }}>
-              {isLogin ? 'Welcome back' : 'Join VyorAI'}
+              {isLogin ? 'Welcome back' : 'Join AI Interviewer'}
             </h2>
             <p style={{ marginTop: 8, fontSize: 15, color: '#64748B', fontWeight: 500 }}>
               {isLogin ? 'Enter your credentials to continue.' : 'Start your journey with us today.'}

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&font-display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -55,6 +55,8 @@
 
 html {
   scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -170,7 +172,8 @@ body {
   color: #475569;
   font-weight: 500;
   font-size: 14px;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: background 0.15s ease, color 0.15s ease;
+  will-change: auto;
 }
 
 .sidebar-link:hover {
@@ -201,7 +204,7 @@ body {
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .logout-button:hover {
@@ -278,6 +281,25 @@ body {
 .content-main {
   flex: 1;
   padding: 32px;
+  background: #F8FAFC;
+  min-height: calc(100vh - 64px);
+}
+
+/* ---------- Page transition (no white flash) ---------- */
+@keyframes page-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-fade-in {
+  animation: page-fade 0.18s ease-out both;
+  will-change: opacity, transform;
 }
 
 /* ---------- Cards & panels ---------- */
@@ -287,6 +309,7 @@ body {
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  contain: layout style;
 }
 
 .card-hover:hover {
@@ -310,11 +333,12 @@ body {
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.15s ease, transform 0.1s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  transform: translateZ(0);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -335,7 +359,7 @@ body {
   font-weight: 500;
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -377,7 +401,7 @@ body {
   font-weight: 500;
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: background 0.15s ease, color 0.15s ease;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -397,7 +421,7 @@ body {
   color: #0F172A;
   font-size: 14px;
   width: 100%;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .input-soft::placeholder {
@@ -431,7 +455,7 @@ select.input-soft:focus {
   font-size: 14px;
   font-weight: 500;
   width: 100%;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   box-sizing: border-box;
 }
 
@@ -485,15 +509,24 @@ textarea.base-input {
 
 /* ---------- Skeleton ---------- */
 @keyframes shimmer-slide {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #F1F5F9 0%, #E2E8F0 50%, #F1F5F9 100%);
-  background-size: 200% 100%;
-  animation: shimmer-slide 1.4s ease infinite;
+  background: #E2E8F0;
+  position: relative;
+  overflow: hidden;
   border-radius: 8px;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%);
+  animation: shimmer-slide 1.2s ease infinite;
+  transform: translateZ(0);
 }
 
 /* ---------- Progress ---------- */
@@ -507,7 +540,8 @@ textarea.base-input {
 .progress-fill {
   height: 100%;
   background: #6366F1;
-  transition: width 0.4s ease;
+  transition: width 0.3s ease;
+  transform: translateZ(0);
 }
 
 /* ---------- Table ---------- */
@@ -546,7 +580,7 @@ textarea.base-input {
 }
 
 .data-table tbody tr {
-  transition: background 0.15s ease;
+  transition: background 0.1s ease;
 }
 
 .data-table tbody tr:hover {
@@ -622,7 +656,7 @@ textarea.base-input {
   cursor: pointer;
   padding: 4px;
   border-radius: 12px;
-  transition: background 0.2s ease;
+  transition: background 0.15s ease;
 }
 
 .profile-trigger:hover {
@@ -637,7 +671,7 @@ textarea.base-input {
 
 .dropdown-arrow {
   color: #94A3B8;
-  transition: transform 0.2s ease;
+  transition: transform 0.15s ease, color 0.15s ease;
 }
 
 .dropdown-arrow.active {
@@ -657,6 +691,9 @@ textarea.base-input {
   overflow: hidden;
   z-index: 50;
   padding: 8px;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .dropdown-header {
@@ -728,7 +765,7 @@ textarea.base-input {
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .dropdown-item:hover {

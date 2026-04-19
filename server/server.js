@@ -47,7 +47,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.get('/', (req, res) => {
   res.json({
-    message: '🚀 VyorAI API is running',
+    message: '🚀 AI Interviewer API is running',
     healthCheck: '/api/health',
     version: '1.0.0'
   });
@@ -73,7 +73,7 @@ const startServer = async () => {
   // Only start the server if not running as a Vercel function
   if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     server.listen(PORT, () => {
-      console.log(`🚀 VyorAI Server running on http://localhost:${PORT}`);
+      console.log(`🚀 AI Interviewer Server running on http://localhost:${PORT}`);
       console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
     });
   }

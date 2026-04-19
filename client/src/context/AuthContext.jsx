@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import api from '../services/api';
 
@@ -9,55 +9,46 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const decoded = jwtDecode(token);
-          // Simple check to see if token is expired
-          if (decoded.exp * 1000 < Date.now()) {
-            logout();
-          } else {
-            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            // Set initial state from token
-            setUser({ id: decoded.id, role: decoded.role, name: decoded.name });
-            
-            // Fetch complete profile from server
-            try {
-              const res = await api.get('/auth/profile');
-              if (res.data) {
-                setUser({ ...res.data, id: res.data._id || decoded.id });
-              }
-            } catch (profileError) {
-              console.error('Failed to fetch profile on load', profileError);
-            }
-          }
-        } catch (e) {
-          logout();
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        if (decoded.exp * 1000 < Date.now()) {
+          // Expired — clear silently
+          localStorage.removeItem('token');
+          delete api.defaults.headers.common['Authorization'];
+        } else {
+          // Set auth header and user from token instantly — no network call needed
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          setUser({ id: decoded.id, role: decoded.role, name: decoded.name, email: decoded.email });
         }
+      } catch {
+        localStorage.removeItem('token');
       }
-      setLoading(false);
-    };
-    
-    initAuth();
+    }
+    setLoading(false);
   }, []);
 
-  const login = (token, userData) => {
+  const login = useCallback((token, userData) => {
     localStorage.setItem('token', token);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setUser(userData);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
-  };
+  }, []);
 
-  if (loading) return null; // Wait for auth check
+  const value = useMemo(() => ({ user, login, logout }), [user, login, logout]);
+
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: '#F8FAFC' }} />
+  );
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

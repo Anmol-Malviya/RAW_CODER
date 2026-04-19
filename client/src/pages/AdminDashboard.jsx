@@ -6,7 +6,7 @@ import {
   Calendar, FileText, Mail, Clock, Send, CheckCheck, XCircle,
 } from 'lucide-react';
 
-const STATUS_KEY = 'vyorai:admin:statuses';
+const STATUS_KEY = 'ai_interviewer:admin:statuses';
 
 export default function AdminDashboard() {
   const [jobs, setJobs] = useState([]);

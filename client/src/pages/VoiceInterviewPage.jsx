@@ -524,7 +524,7 @@ export default function VoiceInterviewPage() {
             <Bot color="white" size={24} />
           </div>
           <div>
-            <h1 style={{ fontSize: 16, fontWeight: 800, margin: 0, tracking: '-0.02em', color: '#1A1A1A' }}>VyorAI <span style={{ color: '#6366F1' }}>Pro</span></h1>
+            <h1 style={{ fontSize: 16, fontWeight: 800, margin: 0, tracking: '-0.02em', color: '#1A1A1A' }}>AI Interviewer <span style={{ color: '#6366F1' }}>Pro</span></h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#EF4444', animation: 'blink 1.5s infinite' }} />
               <span style={{ color: '#64748B', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em' }}>LIVE SESSION • {formatTime(elapsed)}</span>

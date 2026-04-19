@@ -118,8 +118,8 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="absolute top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">V</div>
-          <span className="text-xl font-bold text-slate-900 tracking-tight">VyorAI</span>
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">A</div>
+          <span className="text-xl font-bold text-slate-900 tracking-tight">AI Interviewer</span>
         </div>
         <div className="flex items-center gap-8">
           <div className="hidden md:flex gap-6 text-sm font-medium text-slate-600">
@@ -396,7 +396,7 @@ export default function LandingPage() {
             </div>
             <div className="relative">
               <div className="text-3xl md:text-4xl font-medium italic leading-relaxed text-slate-300">
-                "VyorAI has fundamentally changed how we evaluate talent. We've completely eliminated the initial screening drag and focused solely on the top 2% of candidates."
+                "AI Interviewer has fundamentally changed how we evaluate talent. We've completely eliminated the initial screening drag and focused solely on the top 2% of candidates."
               </div>
               <Sparkles className="absolute -top-10 -left-10 w-20 h-20 text-indigo-500/20" />
             </div>
@@ -408,8 +408,8 @@ export default function LandingPage() {
       <footer className="py-20 px-8 border-t border-slate-100 bg-white">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-slate-900 rounded flex items-center justify-center text-white text-[10px] font-bold">V</div>
-            <span className="font-bold text-slate-900">VyorAI © 2026</span>
+            <div className="w-6 h-6 bg-slate-900 rounded flex items-center justify-center text-white text-[10px] font-bold">A</div>
+            <span className="font-bold text-slate-900">AI Interviewer © 2026</span>
           </div>
           <div className="flex gap-8 text-sm font-bold text-slate-500">
              <a href="#" className="hover:text-black">Privacy Policy</a>

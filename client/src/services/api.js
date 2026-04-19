@@ -7,6 +7,37 @@ const api = axios.create({
   timeout: 120000, // 2 min timeout for AI generation
 });
 
+// ─── Request deduplication: prevent duplicate in-flight GET requests ───
+const pendingRequests = new Map();
+
+api.interceptors.request.use((config) => {
+  if (config.method === 'get') {
+    const key = config.url + JSON.stringify(config.params || {});
+    if (pendingRequests.has(key)) {
+      // Return the existing promise instead of making a new request
+      config._dedupPromise = pendingRequests.get(key);
+    }
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => {
+    if (response.config.method === 'get') {
+      const key = response.config.url + JSON.stringify(response.config.params || {});
+      pendingRequests.delete(key);
+    }
+    return response;
+  },
+  (error) => {
+    if (error.config?.method === 'get') {
+      const key = error.config.url + JSON.stringify(error.config.params || {});
+      pendingRequests.delete(key);
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const registerUser = async (name, email, password, role) => {
   const response = await api.post('/auth/register', { name, email, password, role });
   return response.data;

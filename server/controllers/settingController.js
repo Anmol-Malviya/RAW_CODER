@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 const isMockMode = () => mongoose.connection.readyState !== 1;
 
 let mockSettings = [
-  { key: 'company_name', value: 'VyorAI Technologies', description: 'Name of the organization' },
+  { key: 'company_name', value: 'AI Interviewer Solutions', description: 'Name of the organization' },
   { key: 'interview_timeout', value: 3600, description: 'Interview session timeout in seconds' },
   { key: 'ai_model', value: 'gemini-1.5-flash', description: 'Default AI model for generation' },
   { key: 'proctoring_strictness', value: 'medium', description: 'Warning threshold for auto-termination' }

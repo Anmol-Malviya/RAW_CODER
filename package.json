@@ -1,6 +1,6 @@
 
 {
-  "name": "vyorai-test",
+  "name": "ai-interviewer",
   "version": "1.0.0",
   "type": "module",
   "dependencies": {

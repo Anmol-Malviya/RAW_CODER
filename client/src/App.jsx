@@ -25,6 +25,7 @@ import CandidateATSChecker from './pages/CandidateATSChecker';
 import SessionCandidatesPage from './pages/SessionCandidatesPage';
 import WorkspaceDashboard from './pages/WorkspaceDashboard';
 import WorkspaceSessionDetail from './pages/WorkspaceSessionDetail';
+import AdminProfile from './pages/AdminProfile';
 
 function ProtectedRoute({ children, role }) {
   const { user } = useAuth();
@@ -78,10 +79,88 @@ function AppRoutes() {
         <Route path="/admin/sessions" element={<AdminSessionsPage />} />
         <Route path="/admin/analytics" element={<AnalyticsPage />} />
         <Route path="/admin/settings" element={<SettingsPage />} />
+        <Route path="/admin/profile" element={<AdminProfile />} />
+        {/* New Admin Workspace */}
+        <Route path="/admin/workspace" element={<WorkspaceDashboard />} />
+        <Route path="/admin/workspace/session/:id" element={<WorkspaceSessionDetail />} />
+        <Route path="/admin/sessions/:sessionId/candidates" element={<SessionCandidatesPage />} />
+      </Route>
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}
+
+export default App;
+
+function ProtectedRoute({ children, role }) {
+  const { user } = useAuth();
+
+  if (!user) return <Navigate to="/login" replace />;
+  if (role && user.role !== role) {
+    return <Navigate to={user.role === 'admin' ? '/admin' : '/candidate'} replace />;
+  }
+
+  return children ? children : <Outlet />;
+}
+
+function AuthenticatedLayout() {
+  return (
+    <AssessmentProvider>
+      <AppLayout />
+    </AssessmentProvider>
+  );
+}
+
+function AppRoutes() {
+  const { user } = useAuth();
+
+  return (
+    <Routes>
+      {/* Public landing page */}
+      <Route path="/" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/candidate'} replace /> : <HomePage />} />
+
+      {/* Login / Signup page */}
+      <Route path="/login" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/candidate'} replace /> : <LoginPage />} />
+
+      <Route element={<ProtectedRoute role="candidate"><AuthenticatedLayout /></ProtectedRoute>}>
+        <Route path="/candidate" element={<CandidateDashboard />} />
+        <Route path="/check" element={<SystemCheckPage />} />
+        <Route path="/apply/:jobId" element={<JobApplyPage />} />
+        <Route path="/assessment" element={<AssessmentPage />} />
+        <Route path="/results" element={<ResultsPage />} />
+        <Route path="/coding" element={<CodingTestPage />} />
+        <Route path="/candidate/practice" element={<CandidatePractice />} />
+        <Route path="/candidate/profile" element={<CandidateProfile />} />
+        <Route path="/candidate/ats" element={<CandidateATSChecker />} />
+        <Route path="/candidate/support" element={<CandidateSupport />} />
+        <Route path="/voice-interview" element={<VoiceInterviewPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute role="admin"><AuthenticatedLayout /></ProtectedRoute>}>
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/roles" element={<JobManagementPage />} />
+        <Route path="/admin/live" element={<AdminLiveMonitor />} />
+        <Route path="/admin/questions" element={<QuestionBankPage />} />
+        <Route path="/admin/sessions" element={<AdminSessionsPage />} />
+        <Route path="/admin/analytics" element={<AnalyticsPage />} />
+        <Route path="/admin/settings" element={<SettingsPage />} />
+<<<<<<< Updated upstream
         
         {/* New Admin Workspace */}
         <Route path="/admin/workspace" element={<WorkspaceDashboard />} />
         <Route path="/admin/workspace/session/:id" element={<WorkspaceSessionDetail />} />
+=======
+        <Route path="/admin/profile" element={<AdminProfile />} />
+>>>>>>> Stashed changes
       </Route>
     </Routes>
   );

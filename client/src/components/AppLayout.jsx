@@ -45,12 +45,13 @@ const titleMap = [
   { match: '/admin/sessions', title: 'Interview Sessions' },
   { match: '/admin/analytics', title: 'Analytics' },
   { match: '/admin/settings', title: 'Settings' },
+  { match: '/admin/profile', title: 'Admin Profile' },
   { match: '/admin', title: 'Dashboard' },
 ];
 
 function getPageTitle(pathname) {
   const match = titleMap.find((item) => pathname.startsWith(item.match));
-  return match ? match.title : 'VyorAI';
+  return match ? match.title : 'AI Interviewer';
 }
 
 export default function AppLayout() {
@@ -91,9 +92,9 @@ export default function AppLayout() {
       <aside className="sidebar">
         <div>
           <div className="sidebar-brand">
-            <div className="brand-mark" style={{ background: 'linear-gradient(135deg, #6366F1, #4F46E5)', color: 'white', border: 'none' }}>V</div>
+            <div className="brand-mark" style={{ background: 'linear-gradient(135deg, #6366F1, #4F46E5)', color: 'white', border: 'none' }}>A</div>
             <div>
-              <p className="brand-name">VyorAI</p>
+              <p className="brand-name">AI Interviewer</p>
               <p className="brand-subtitle">Interview platform</p>
             </div>
           </div>
@@ -140,9 +141,10 @@ export default function AppLayout() {
             <AnimatePresence>
               {isDropdownOpen && (
                 <motion.div 
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  transition={{ duration: 0.12, ease: 'easeOut' }}
                   className="profile-dropdown"
                 >
                   <div className="dropdown-header">
@@ -167,7 +169,7 @@ export default function AppLayout() {
                   <div className="dropdown-divider" />
 
                   <div className="dropdown-menu">
-                    <Link to={user?.role === 'admin' ? '/admin/settings' : '/candidate/profile'} className="dropdown-item">
+                    <Link to={user?.role === 'admin' ? '/admin/profile' : '/candidate/profile'} className="dropdown-item">
                       <User size={16} />
                       <span>My Profile</span>
                     </Link>
@@ -183,7 +185,9 @@ export default function AppLayout() {
         </header>
 
         <main className="content-main">
-          <Outlet />
+          <div key={location.pathname} className="page-fade-in">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
