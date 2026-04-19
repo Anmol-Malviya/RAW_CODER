@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { fetchJobs, createJob, getJobCandidates, sendCandidateEmail, sendBulkCandidateEmails, updateCandidateStatus } from '../services/api';
 import {
   Plus, Users, AlertTriangle, Briefcase, Search, X, Download, Eye,
@@ -495,7 +496,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* View candidate modal */}
-      {viewing && (
+      {viewing && createPortal(
         <ViewCandidateModal
           candidate={viewing}
           status={getStatus(viewing._id)}
@@ -505,19 +506,20 @@ export default function AdminDashboard() {
             setViewing(null);
           }}
           onDownload={() => downloadReport(viewing)}
-        />
+        />,
+        document.body
       )}
 
       {/* New job modal */}
-      {showNewJobModal && (
+      {showNewJobModal && createPortal(
         <div
-          style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(15,23,42,0.4)' }}
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, background: 'rgba(15,23,42,0.4)' }}
           onClick={() => !isPosting && setShowNewJobModal(false)}
         >
           <div
             className="card"
             onClick={(e) => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: 520, padding: 0, boxShadow: '0 20px 60px rgba(15,23,42,0.15)' }}
+            style={{ width: '100%', maxWidth: 520, padding: 0, maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(15,23,42,0.15)' }}
           >
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
@@ -567,7 +569,7 @@ export default function AdminDashboard() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleCreateJob} style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <form onSubmit={handleCreateJob} style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', flex: 1 }}>
                 <div>
                   <label className="field-label">Job title</label>
                   <input
@@ -640,7 +642,8 @@ export default function AdminDashboard() {
               </form>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

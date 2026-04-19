@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { fetchQuestions, addQuestion, deleteQuestion } from '../services/api';
 import {
   Plus, Trash2, Database, Search, Filter, 
@@ -193,16 +194,18 @@ export default function QuestionBankPage() {
         </div>
       )}
 
-      {/* Add Modal */}
-      {showModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div className="card" style={{ width: '100%', maxWidth: 540, padding: 0, overflow: 'hidden' }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      {showModal && createPortal(
+        <div 
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
+        >
+          <div className="card" style={{ width: '100%', maxWidth: 540, padding: 0, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
                <h2 style={{ fontSize: 18, fontWeight: 700 }}>Add New Question</h2>
                <button onClick={() => setShowModal(false)} className="btn-ghost" style={{ padding: 4 }}><X size={20} /></button>
             </div>
 
-            <form onSubmit={handleAdd} style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <form onSubmit={handleAdd} style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', flex: 1 }}>
               <div>
                 <label className="field-label">Question Text</label>
                 <textarea 
@@ -295,7 +298,8 @@ export default function QuestionBankPage() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

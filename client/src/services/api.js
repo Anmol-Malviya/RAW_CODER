@@ -219,7 +219,7 @@ export const sendBulkCandidateEmails = async (candidates, type) => {
 };
 
 export const updateCandidateStatus = async (sessionId, status) => {
-  const response = await api.patch(`/session/${sessionId}/status`, { status });
+  const response = await api.put(`/session/${sessionId}/status`, { status });
   return response.data;
 };
 
