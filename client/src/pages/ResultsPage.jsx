@@ -5,7 +5,7 @@ import {
   Download, Sparkles, TrendingUp, TrendingDown, Target, Loader, Star, Send
 } from 'lucide-react';
 import { useAssessment } from '../context/AssessmentContext';
-import { submitFeedback } from '../services/api';
+import { submitFeedback, getSession } from '../services/api';
 
 function ScoreRing({ score, total }) {
   const radius = 52;
@@ -161,7 +161,7 @@ export default function ResultsPage() {
   const loadSession = async (id) => {
     setLoading(true);
     try {
-      const data = await import('../services/api').then(m => m.getSession(id));
+      const data = await getSession(id);
       if (data) {
         setSession({
           ...data,

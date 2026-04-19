@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { fetchJobs, getUserSessions } from '../services/api';
+import { fetchJobs, getUserSessions, validateInterviewCode } from '../services/api';
 import { Briefcase, Search, ArrowRight, Clock, ClipboardList, FileText, CheckCircle, ChevronRight, BarChart3 } from 'lucide-react';
 
 export default function CandidateDashboard() {
@@ -121,7 +121,7 @@ export default function CandidateDashboard() {
                   const code = document.getElementById('interviewCode').value;
                   if (!code) return;
                   try {
-                    const data = await import('../services/api').then(m => m.validateInterviewCode(code));
+                    const data = await validateInterviewCode(code);
                     navigate('/check', { state: { jobData: data } });
                   } catch (err) { alert(err.response?.data?.error || 'Invalid code'); }
                 }}

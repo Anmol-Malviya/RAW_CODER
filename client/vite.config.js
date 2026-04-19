@@ -30,18 +30,28 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['framer-motion', 'lucide-react'],
-          'vendor-axios': ['axios'],
-          'vendor-socket': ['socket.io-client'],
+        // Vite 8 (Rolldown) requires manualChunks as a function
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'vendor-react';
+            }
+            if (id.includes('framer-motion') || id.includes('lucide-react')) {
+              return 'vendor-ui';
+            }
+            if (id.includes('axios')) {
+              return 'vendor-axios';
+            }
+            if (id.includes('socket.io')) {
+              return 'vendor-socket';
+            }
+            if (id.includes('@tensorflow')) {
+              return 'vendor-tf';
+            }
+          }
         },
       },
     },
     chunkSizeWarningLimit: 1500,
-  },
-  esbuild: {
-    target: 'es2020',
-    legalComments: 'none',
   },
 })
