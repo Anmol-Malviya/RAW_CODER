@@ -207,26 +207,35 @@ export default function AssessmentPage() {
     setSubmitting(true);
     const testDurationSeconds = Math.floor((Date.now() - state.startedAt) / 1000);
     
-    // Stop camera recording and upload
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.onstop = async () => {
-        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-        try { uploadRecording(sessionId, blob).catch(console.error); } catch (err) {}
-      };
-      mediaRecorderRef.current.stop();
-    }
-
-    // Stop screen recording and upload
-    if (screenRecorderRef.current && screenRecorderRef.current.state !== 'inactive') {
-      screenRecorderRef.current.onstop = async () => {
-        const blob = new Blob(screenChunksRef.current, { type: 'video/webm' });
-        try { uploadScreenRecording(sessionId, blob).catch(console.error); } catch (err) {}
-      };
-      screenRecorderRef.current.stop();
-    }
+    // Helper to upload media
+    const uploadMedia = (recorderRef, chunksRef, uploadFn) => {
+      return new Promise((resolve) => {
+        if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+          recorderRef.current.onstop = async () => {
+            try {
+              const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+              await uploadFn(sessionId, blob);
+            } catch (err) {
+              console.error("Media upload failed:", err);
+            } finally {
+              resolve();
+            }
+          };
+          recorderRef.current.stop();
+        } else {
+          resolve(); // Already inactive or undefined
+        }
+      });
+    };
 
     try {
-      const result = await submitAssessment(sessionId, answers, proctoring.tabSwitchCount, testDurationSeconds);
+      // Run uploads and assessment submission concurrently to save time, but wait for all
+      const [result] = await Promise.all([
+        submitAssessment(sessionId, answers, proctoring.tabSwitchCount, testDurationSeconds),
+        uploadMedia(mediaRecorderRef, recordedChunksRef, uploadRecording),
+        uploadMedia(screenRecorderRef, screenChunksRef, uploadScreenRecording)
+      ]);
+
       let score = result.score;
       let finalQuestions = result.questions;
       if (score === undefined && rawQuestions.length > 0) {
