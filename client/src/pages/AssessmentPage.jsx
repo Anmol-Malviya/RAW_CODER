@@ -266,20 +266,20 @@ export default function AssessmentPage() {
 
   if (!screenShared) {
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', color: '#E2E8F0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: 24, textAlign: 'center' }}>
-        <div style={{ background: '#1E293B', padding: 32, borderRadius: 16, maxWidth: 400, boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+      <div style={{ position: 'fixed', inset: 0, background: '#F8FAFC', color: '#0F172A', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: 24, textAlign: 'center' }}>
+        <div style={{ background: '#FFFFFF', padding: 32, borderRadius: 16, maxWidth: 400, boxShadow: '0 10px 25px rgba(0,0,0,0.05)', border: '1px solid #E2E8F0' }}>
           <div style={{ width: 64, height: 64, borderRadius: 32, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             <Video size={32} color="#3B82F6" />
           </div>
-          <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12, color: '#F8FAFC' }}>Screen Share Required</h2>
-          <p style={{ fontSize: 16, color: '#94A3B8', marginBottom: 24, lineHeight: 1.5 }}>
+          <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12, color: '#0F172A' }}>Screen Share Required</h2>
+          <p style={{ fontSize: 16, color: '#64748B', marginBottom: 24, lineHeight: 1.5 }}>
             To begin your interview, you must share your screen. This will be recorded alongside your camera. Please ensure you select "Entire Screen" in the prompt.
           </p>
           <button 
             onClick={handleStartScreenShare}
-            style={{ width: '100%', background: '#3B82F6', color: 'white', border: 'none', padding: '14px 20px', borderRadius: 8, fontSize: 16, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s' }}
-            onMouseOver={(e) => e.currentTarget.style.background = '#2563EB'}
-            onMouseOut={(e) => e.currentTarget.style.background = '#3B82F6'}
+            style={{ width: '100%', background: '#4F46E5', color: 'white', border: 'none', padding: '14px 20px', borderRadius: 8, fontSize: 16, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s' }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#4338CA'}
+            onMouseOut={(e) => e.currentTarget.style.background = '#4F46E5'}
           >
             Share Screen & Start Interview
           </button>
@@ -293,18 +293,18 @@ export default function AssessmentPage() {
   const clock = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#0F172A', color: '#E2E8F0', display: 'flex', flexDirection: 'column', zIndex: 50 }}>
+    <div style={{ position: 'relative', inset: 0, background: '#F8FAFC', color: '#0F172A', display: 'flex', flexDirection: 'column', zIndex: 50, height: '100vh' }}>
       {/* Top bar */}
-      <div style={{ height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', borderBottom: '1px solid #1E293B', background: '#0B1120' }}>
+      <div style={{ height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', borderBottom: '1px solid #E2E8F0', background: '#FFFFFF' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 8, height: 8, borderRadius: 999, background: '#F43F5E', boxShadow: '0 0 0 4px rgba(244,63,94,0.2)' }} />
-          <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.04em' }}>LIVE INTERVIEW</span>
+          <div style={{ width: 8, height: 8, borderRadius: 999, background: '#EF4444', boxShadow: '0 0 0 4px rgba(239,68,68,0.2)' }} />
+          <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.04em', color: '#1E293B' }}>LIVE INTERVIEW</span>
           <span style={{ fontSize: 13, color: '#94A3B8' }}>·</span>
-            <span style={{ fontSize: 13, color: '#CBD5E1' }}>{jobRole || 'Technical screening'}</span>
+            <span style={{ fontSize: 13, color: '#64748B' }}>{jobRole || 'Technical screening'}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span style={{ fontSize: 13, color: '#94A3B8' }}>Question {currentQuestion + 1} of {questions.length}</span>
-            <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 14, color: '#E2E8F0', padding: '4px 10px', borderRadius: 6, background: '#1E293B' }}>{clock}</span>
+            <span style={{ fontSize: 13, color: '#64748B' }}>Question {currentQuestion + 1} of {questions.length}</span>
+            <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 14, color: '#0F172A', padding: '4px 10px', borderRadius: 6, background: '#F1F5F9' }}>{clock}</span>
           </div>
         </div>
 
@@ -352,16 +352,16 @@ export default function AssessmentPage() {
         </AnimatePresence>
 
       {/* Progress bar */}
-      <div style={{ height: 2, background: '#1E293B' }}>
-        <div style={{ height: '100%', width: `${progress}%`, background: '#6366F1', transition: 'width 0.3s ease' }} />
+      <div style={{ height: 2, background: '#E2E8F0' }}>
+        <div style={{ height: '100%', width: `${progress}%`, background: '#4F46E5', transition: 'width 0.3s ease' }} />
       </div>
 
       {/* Main split */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         {/* Left 70% */}
-        <div style={{ flex: '0 0 70%', padding: '40px 56px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: '#818CF8', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Current question</p>
-          <h2 style={{ marginTop: 12, fontSize: 26, fontWeight: 600, color: '#F8FAFC', lineHeight: 1.3, letterSpacing: '-0.01em', maxWidth: 820 }}>
+        <div style={{ flex: '0 0 70%', padding: '40px 56px', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: '#FFFFFF' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Current question</p>
+          <h2 style={{ marginTop: 12, fontSize: 26, fontWeight: 600, color: '#0F172A', lineHeight: 1.3, letterSpacing: '-0.01em', maxWidth: 820 }}>
             {question.question}
           </h2>
 
@@ -379,33 +379,34 @@ export default function AssessmentPage() {
                     gap: 14,
                     padding: '14px 18px',
                     borderRadius: 10,
-                    border: `1px solid ${selected ? '#6366F1' : '#1E293B'}`,
-                    background: selected ? 'rgba(99,102,241,0.15)' : '#1E293B',
-                    color: '#E2E8F0',
+                    border: `1px solid ${selected ? '#4F46E5' : '#E2E8F0'}`,
+                    background: selected ? '#EEF2FF' : '#FFFFFF',
+                    color: '#334155',
                     textAlign: 'left',
                     cursor: 'pointer',
                     fontSize: 14,
                     transition: 'all 0.2s ease',
+                    boxShadow: selected ? '0 1px 2px 0 rgba(79, 70, 229, 0.1)' : '0 1px 2px 0 rgba(0, 0, 0, 0.02)'
                   }}
                 >
                   <span style={{
                     width: 24, height: 24, borderRadius: 6,
-                    background: selected ? '#6366F1' : '#0F172A',
-                    color: selected ? '#FFFFFF' : '#94A3B8',
+                    background: selected ? '#4F46E5' : '#F1F5F9',
+                    color: selected ? '#FFFFFF' : '#64748B',
                     display: 'grid', placeItems: 'center',
                     fontSize: 12, fontWeight: 600,
                   }}>
                     {String.fromCharCode(65 + idx)}
                   </span>
-                  <span style={{ flex: 1 }}>{option}</span>
-                  {selected && <Circle size={8} fill="#6366F1" color="#6366F1" />}
+                  <span style={{ flex: 1, fontWeight: selected ? 600 : 400, color: selected ? '#111827' : '#334155' }}>{option}</span>
+                  {selected && <Circle size={8} fill="#4F46E5" color="#4F46E5" />}
                 </button>
               );
             })}
           </div>
 
           {/* Transcript */}
-          <div style={{ marginTop: 32, padding: 20, borderRadius: 10, background: '#0B1120', border: '1px solid #1E293B', maxWidth: 820 }}>
+          <div style={{ marginTop: 32, padding: 20, borderRadius: 10, background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', maxWidth: 820 }}>
             <p style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
               Live transcript
             </p>
@@ -417,13 +418,13 @@ export default function AssessmentPage() {
         </div>
 
         {/* Right 30% */}
-        <aside style={{ flex: '0 0 30%', borderLeft: '1px solid #1E293B', padding: 24, display: 'flex', flexDirection: 'column', gap: 16, background: '#0B1120', overflowY: 'auto' }}>
+        <aside style={{ flex: '0 0 30%', borderLeft: '1px solid #E2E8F0', padding: 24, display: 'flex', flexDirection: 'column', gap: 16, background: '#F8FAFC', overflowY: 'auto' }}>
           {/* Webcam */}
-          <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #1E293B', background: '#020617', aspectRatio: '4/3', position: 'relative' }}>
+          <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #E2E8F0', background: '#000000', aspectRatio: '4/3', position: 'relative', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
             <video ref={videoRef} autoPlay muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, background: 'rgba(15,23,42,0.75)', backdropFilter: 'blur(6px)' }}>
-              <div style={{ width: 6, height: 6, borderRadius: 999, background: '#10B981' }} />
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#E2E8F0' }}>LIVE</span>
+            <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(6px)', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+              <div style={{ width: 6, height: 6, borderRadius: 999, background: '#EF4444' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#0F172A' }}>LIVE</span>
             </div>
           </div>
 
@@ -457,18 +458,18 @@ export default function AssessmentPage() {
           <div style={{ flex: 1 }} />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: '#64748B' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Answered</span><span style={{ color: '#E2E8F0', fontWeight: 600 }}>{answeredCount} / {questions.length}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: '#FFFFFF', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+              <span>Answered</span><span style={{ color: '#0F172A', fontWeight: 600 }}>{answeredCount} / {questions.length}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Session ID</span><span style={{ color: '#E2E8F0', fontFamily: 'ui-monospace, monospace' }}>{(sessionId || '').slice(-6) || '—'}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: '#FFFFFF', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+              <span>Session ID</span><span style={{ color: '#0F172A', fontFamily: 'ui-monospace, monospace', fontWeight: 500 }}>{(sessionId || '').slice(-6) || '—'}</span>
             </div>
           </div>
         </aside>
       </div>
 
       {/* Bottom control bar */}
-      <div style={{ height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', background: '#0B1120', borderTop: '1px solid #1E293B' }}>
+      <div style={{ height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', background: '#FFFFFF', borderTop: '1px solid #E2E8F0' }}>
         <div style={{ display: 'flex', gap: 10 }}>
           <ControlButton
             active={micOn}
@@ -493,10 +494,11 @@ export default function AssessmentPage() {
               dispatch({ type: 'PREV_QUESTION' });
             }}
             style={{
-              padding: '10px 16px', borderRadius: 8, background: 'transparent',
-              border: '1px solid #334155', color: currentQuestion === 0 ? '#475569' : '#E2E8F0',
+              padding: '10px 16px', borderRadius: 8, background: '#FFFFFF',
+              border: '1px solid #E2E8F0', color: currentQuestion === 0 ? '#94A3B8' : '#334155',
               fontSize: 13, fontWeight: 500, cursor: currentQuestion === 0 ? 'not-allowed' : 'pointer',
               display: 'inline-flex', alignItems: 'center', gap: 6,
+              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.02)'
             }}
           >
             <ChevronLeft size={14} /> Previous
@@ -508,10 +510,11 @@ export default function AssessmentPage() {
               onClick={handleSubmit}
               disabled={submitting}
               style={{
-                padding: '10px 18px', borderRadius: 8, background: '#E11D48',
+                padding: '10px 18px', borderRadius: 8, background: '#EF4444',
                 border: 'none', color: '#FFFFFF', fontSize: 13, fontWeight: 600,
                 cursor: submitting ? 'wait' : 'pointer',
                 display: 'inline-flex', alignItems: 'center', gap: 6,
+                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
               }}
             >
               <PhoneOff size={14} />
@@ -524,8 +527,13 @@ export default function AssessmentPage() {
                 setTranscript('');
                 dispatch({ type: 'NEXT_QUESTION' });
               }}
-              className="btn-primary"
-              style={{ padding: '10px 18px' }}
+              style={{
+                padding: '10px 18px', borderRadius: 8, background: '#4F46E5',
+                border: 'none', color: '#FFFFFF', fontSize: 13, fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -1px rgba(79, 70, 229, 0.1)'
+              }}
             >
               Next <ChevronRight size={14} />
             </button>
@@ -538,7 +546,7 @@ export default function AssessmentPage() {
 
 function TranscriptLine({ children, muted }) {
   return (
-    <p style={{ fontSize: 13, color: muted ? '#475569' : '#CBD5E1', fontStyle: muted ? 'italic' : 'normal', lineHeight: 1.6 }}>
+    <p style={{ fontSize: 13, color: muted ? '#94A3B8' : '#334155', fontStyle: muted ? 'italic' : 'normal', lineHeight: 1.6 }}>
       {children}
     </p>
   );
@@ -546,9 +554,9 @@ function TranscriptLine({ children, muted }) {
 
 function AlertRow({ tone, icon, title, body }) {
   const tones = {
-    rose: { bg: 'rgba(244,63,94,0.08)', border: '#7F1D1D', color: '#FCA5A5', iconBg: '#7F1D1D' },
-    emerald: { bg: 'rgba(16,185,129,0.08)', border: '#064E3B', color: '#6EE7B7', iconBg: '#064E3B' },
-    slate: { bg: '#0F172A', border: '#1E293B', color: '#CBD5E1', iconBg: '#1E293B' },
+    rose: { bg: '#FEF2F2', border: '#FECACA', color: '#B91C1C', iconBg: '#FCA5A5' },
+    emerald: { bg: '#ECFDF5', border: '#A7F3D0', color: '#047857', iconBg: '#6EE7B7' },
+    slate: { bg: '#FFFFFF', border: '#E2E8F0', color: '#475569', iconBg: '#E2E8F0' },
   };
   const t = tones[tone];
   return (
@@ -557,8 +565,8 @@ function AlertRow({ tone, icon, title, body }) {
         {icon}
       </div>
       <div>
-        <p style={{ fontSize: 12, fontWeight: 600, color: '#E2E8F0' }}>{title}</p>
-        <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{body}</p>
+        <p style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>{title}</p>
+        <p style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>{body}</p>
       </div>
     </div>
   );
@@ -572,9 +580,9 @@ function ControlButton({ active, onClick, icon, label, danger }) {
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 8,
         padding: '10px 16px', borderRadius: 8,
-        background: danger ? '#7F1D1D' : active ? '#1E293B' : '#0F172A',
-        color: danger ? '#FCA5A5' : '#E2E8F0',
-        border: `1px solid ${danger ? '#9F1239' : '#334155'}`,
+        background: danger ? '#FEF2F2' : active ? '#F1F5F9' : '#FFFFFF',
+        color: danger ? '#EF4444' : '#1E293B',
+        border: `1px solid ${danger ? '#FECACA' : '#E2E8F0'}`,
         fontSize: 13, fontWeight: 500,
         cursor: onClick ? 'pointer' : 'default',
         transition: 'all 0.2s ease',
