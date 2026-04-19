@@ -973,16 +973,47 @@ function ViewCandidateModal({ candidate: c, status, onClose, onDelete, onDownloa
                         <p style={{ fontSize: 13, fontWeight: 700, color: '#1E293B', lineHeight: 1.4 }}>{q.question}</p>
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginLeft: 34 }}>
-                        <div style={{ fontSize: 11, color: isCorrect ? '#065F46' : '#991B1B' }}>
-                          <span style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Response:</span><br/>
-                          { (c.answers || {})[q.id] || 'Skipped' }
+                      {q.options && q.options.length > 0 ? (
+                        <div style={{ marginLeft: 34, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {q.options.map((opt, optIdx) => {
+                            const candidateAns = (c.answers || {})[q.id];
+                            const isUserAns = candidateAns === opt;
+                            const isCorrectOpt = q.correctAnswer === opt || q.correctAnswer === `Option ${String.fromCharCode(65 + optIdx)}`;
+                            
+                            let bd = '#E2E8F0', bg = '#FFFFFF', color = '#475569', label = '';
+                            if (isCorrectOpt) {
+                              bd = '#10B981'; bg = '#ECFDF5'; color = '#065F46'; label = 'Correct Answer';
+                            } else if (isUserAns) {
+                              bd = '#F43F5E'; bg = '#FFF1F2'; color = '#991B1B'; label = 'Candidate (Incorrect)';
+                            }
+                            if (isUserAns && isCorrectOpt) label = 'Candidate (Correct)';
+                            
+                            return (
+                              <div key={optIdx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: `1px solid ${bd}`, background: bg, borderRadius: 6, fontSize: 12, color }}>
+                                <span style={{ fontWeight: 800, opacity: 0.6 }}>{String.fromCharCode(65 + optIdx)}.</span>
+                                <span style={{ flex: 1, fontWeight: 500 }}>{opt}</span>
+                                {label && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', background: 'rgba(0,0,0,0.06)', borderRadius: 4, letterSpacing: '0.02em', flexShrink: 0 }}>{label}</span>}
+                              </div>
+                            );
+                          })}
+                          {(!q.options.includes((c.answers || {})[q.id]) && (c.answers || {})[q.id]) && (
+                            <div style={{ padding: '8px 12px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: 6, fontSize: 12, color: '#991B1B', marginTop: 4 }}>
+                              <span style={{ fontWeight: 800 }}>RESPONSE:</span> {(c.answers || {})[q.id]}
+                            </div>
+                          )}
                         </div>
-                        <div style={{ fontSize: 11, color: '#166534' }}>
-                          <span style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Best Approach:</span><br/>
-                          { q.correctAnswer }
+                      ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginLeft: 34 }}>
+                          <div style={{ fontSize: 11, color: isCorrect ? '#065F46' : '#991B1B' }}>
+                            <span style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Response:</span><br/>
+                            { (c.answers || {})[q.id] || 'Skipped' }
+                          </div>
+                          <div style={{ fontSize: 11, color: '#166534' }}>
+                            <span style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Best Approach:</span><br/>
+                            { q.correctAnswer }
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       {q.explanation && (
                          <div style={{ marginLeft: 34, fontSize: 11, color: '#64748B', fontStyle: 'italic', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: 8 }}>

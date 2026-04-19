@@ -61,7 +61,7 @@ export const generateMCQ = async (req, res) => {
         throw new Error('No API Key');
       }
       const completion = await groq.chat.completions.create({
-        model: 'openai/gpt-oss-120b',
+        model: 'llama3-8b-8192',
         messages: [
           { role: 'system', content: MCQ_SYSTEM_PROMPT },
           {
@@ -79,7 +79,7 @@ export const generateMCQ = async (req, res) => {
       const parsedQuestions = JSON.parse(responseContent);
       questions = parsedQuestions.questions;
     } catch (err) {
-      console.warn('⚡ Mock Mode: Using sample questions (Groq failed or missing)');
+      console.warn('⚡ Mock Mode: Using sample questions (Groq failed or missing)', err.message);
       questions = SAMPLE_QUESTIONS;
     }
 
@@ -142,7 +142,7 @@ export const generatePracticeSession = async (req, res) => {
     try {
       if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY === 'default-key') throw new Error('No API Key');
       const completion = await groq.chat.completions.create({
-        model: 'openai/gpt-oss-120b',
+        model: 'llama3-8b-8192',
         messages: [
           { role: 'system', content: MCQ_SYSTEM_PROMPT },
           {
@@ -158,7 +158,7 @@ export const generatePracticeSession = async (req, res) => {
       const parsed = JSON.parse(completion.choices[0].message.content);
       questions = parsed.questions;
     } catch (err) {
-      console.warn('Practice: Using sample questions (Groq unavailable)');
+      console.warn('Practice: Using sample questions (Groq unavailable)', err.message);
       questions = SAMPLE_QUESTIONS;
     }
 
