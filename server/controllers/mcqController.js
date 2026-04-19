@@ -61,7 +61,7 @@ export const generateMCQ = async (req, res) => {
         throw new Error('No API Key');
       }
       const completion = await groq.chat.completions.create({
-        model: 'llama3-8b-8192',
+        model: 'llama-3.1-8b-instant',
         messages: [
           { role: 'system', content: MCQ_SYSTEM_PROMPT },
           {
@@ -142,7 +142,7 @@ export const generatePracticeSession = async (req, res) => {
     try {
       if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY === 'default-key') throw new Error('No API Key');
       const completion = await groq.chat.completions.create({
-        model: 'llama3-8b-8192',
+        model: 'llama-3.1-8b-instant',
         messages: [
           { role: 'system', content: MCQ_SYSTEM_PROMPT },
           {
