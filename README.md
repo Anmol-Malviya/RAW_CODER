@@ -364,3 +364,10 @@ This project is built for hackathon demonstration purposes.
 *Powered by Google Gemini · Groq AI · MongoDB Atlas · React · Node.js*
 
 </div>
+
+
+---
+
+## Maintainer
+
+Maintained by [Anmol Malviya](https://github.com/Anmol-Malviya). Issues and focused pull requests are welcome.
